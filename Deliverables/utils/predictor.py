@@ -173,10 +173,6 @@ def update_personality_aggregation(post_text, base_url, models, vectorizer):
         personality_aggregation[dichotomy]["P_sum"] += prob
         personality_aggregation[dichotomy]["n_posts"] += 1
     
-    # Calculate and display cognitive score after each post
-    cognitive_score = get_cognitive_score()
-    print(f"Current Cognitive Score: {cognitive_score:.2f}")
-    
     return predictions['MBTI']
 
 def get_aggregated_personality():

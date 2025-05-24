@@ -22,7 +22,8 @@ from utils.predictor import (
     update_personality_aggregation, 
     get_aggregated_personality, 
     reset_personality_aggregation,
-    get_aggregated_details  
+    get_aggregated_details,
+    get_cognitive_score
 )
 from image_analysis import download_and_process_image
 
@@ -176,23 +177,10 @@ async def analyze_personality(body: Input):
         print("Detected Expression(s):")
         for expr in expressions:
             print(expr)
-
-# COGNITIVE Score calculation can be implemented by:
-    # for dichotomy, data in aggregates.items():
-    #     print(f" {dichotomy}:")
-    #     for letter, stats in data.items():
-    #         if isinstance(stats, dict):
-    #             avg = stats['conf_sum'] / stats['count'] if stats['count'] > 0 else 0.0
-    #             print(f"   {letter}: count = {stats['count']}, average confidence = {avg:.2f}")
-    #         else:
-    #             # For non-dictionary values, simply print the value.
-    #             print(f"   {letter}: {stats}")
-    #     print("-" * 50)
-
     
     # # Get and print the cognitive score
-    # cognitive_score = get_cognitive_score()
-    # print(f"Current Cognitive Score: {cognitive_score:.2f}")
+    cognitive_score = get_cognitive_score()
+    print(f"Current Cognitive Score: {cognitive_score:.2f}")
 
     # Update global personality aggregation with the combined text
     current_personality=update_personality_aggregation(combined_text,url, models, vectorizer)
@@ -207,8 +195,9 @@ async def analyze_personality(body: Input):
     for dichotomy, data in aggregates.items():
             print(f" {dichotomy}:")
             for letter, stats in data.items():
-                avg = stats['conf_sum'] / stats['count'] if stats['count'] > 0 else 0.0
-                print(f"   {letter}: count = {stats['count']}, average confidence = {avg:.2f}")
+                if isinstance(stats, dict):
+                    avg = stats['conf_sum'] / stats['count'] if stats['count'] > 0 else 0.0
+                    print(f"   {letter}: count = {stats['count']}, average confidence = {avg:.2f}")
             print("-" * 50)
     #update_frame(url, overall_result)  # Gives output in native window, no longer used
     if current_personality in Result:
@@ -218,7 +207,7 @@ async def analyze_personality(body: Input):
     websocket = url_to_socket_map.get(url)
     if websocket:
         try:
-            await websocket.send_text(json.dumps({"type": "update",'url':url,"result":Result,"aggregate":aggregates}))
+            await websocket.send_text(json.dumps({"type": "update",'url':url,'cog_score':f'{cognitive_score:.2f}',"result":Result,"aggregate":aggregates}))
         except Exception as e:
             print(f"Error sending WebSocket message: {e}")
     return {"data": current_personality}
