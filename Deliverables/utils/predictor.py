@@ -134,16 +134,15 @@ def load_models():
 # -----------------------------------------------------------------------------
 # Global aggregation for personality predictions from multiple posts.
 # We now store both the cumulative confidence and count for each trait.
+# Added P_sum and n_posts for tracking probability sums across posts
 personality_aggregation = {
-    "IE": {"I": {"count": 0, "conf_sum": 0.0}, "E": {"count": 0, "conf_sum": 0.0}},
-    "NS": {"N": {"count": 0, "conf_sum": 0.0}, "S": {"count": 0, "conf_sum": 0.0}},
-    "FT": {"F": {"count": 0, "conf_sum": 0.0}, "T": {"count": 0, "conf_sum": 0.0}},
-    "JP": {"J": {"count": 0, "conf_sum": 0.0}, "P": {"count": 0, "conf_sum": 0.0}}
+    "IE": {"I": {"count": 0, "conf_sum": 0.0}, "E": {"count": 0, "conf_sum": 0.0}, "P_sum": 0.0, "n_posts": 0},
+    "NS": {"N": {"count": 0, "conf_sum": 0.0}, "S": {"count": 0, "conf_sum": 0.0}, "P_sum": 0.0, "n_posts": 0},
+    "FT": {"F": {"count": 0, "conf_sum": 0.0}, "T": {"count": 0, "conf_sum": 0.0}, "P_sum": 0.0, "n_posts": 0},
+    "JP": {"J": {"count": 0, "conf_sum": 0.0}, "P": {"count": 0, "conf_sum": 0.0}, "P_sum": 0.0, "n_posts": 0}
 }
 
-
-
-def update_personality_aggregation(post_text,base_url, models, vectorizer):
+def update_personality_aggregation(post_text, base_url, models, vectorizer):
     """
     Processes a single post's text, predicts personality dichotomies,
     and updates the global aggregation.
@@ -153,11 +152,11 @@ def update_personality_aggregation(post_text,base_url, models, vectorizer):
         models (dict): Models for each dichotomy.
         vectorizer: A fitted TF-IDF vectorizer.
     """
-    global personality_aggregation,url
-    if url and url!=base_url:
+    global personality_aggregation, url
+    if url and url != base_url:
         return
     if not url:
-        url=base_url
+        url = base_url
     predictions = predict_personality(post_text, models, vectorizer)
     for dichotomy in personality_type:
         pred_info = predictions[dichotomy]
@@ -170,6 +169,14 @@ def update_personality_aggregation(post_text,base_url, models, vectorizer):
         letter = b_Pers_list[idx][binary_pred]
         personality_aggregation[dichotomy][letter]["count"] += 1
         personality_aggregation[dichotomy][letter]["conf_sum"] += confidence
+        # Store raw probability for cognitive score calculation
+        personality_aggregation[dichotomy]["P_sum"] += prob
+        personality_aggregation[dichotomy]["n_posts"] += 1
+    
+    # Calculate and display cognitive score after each post
+    cognitive_score = get_cognitive_score()
+    print(f"Current Cognitive Score: {cognitive_score:.2f}")
+    
     return predictions['MBTI']
 
 def get_aggregated_personality():
@@ -186,7 +193,7 @@ def get_aggregated_personality():
     overall_mbti = ""
     for dichotomy in personality_type:
         data = personality_aggregation[dichotomy]
-        letters = list(data.keys())
+        letters = list(data.keys())[:2]  # Only get I/E, N/S, etc. (not P_sum/n_posts)
         letter1, letter2 = letters[0], letters[1]
         count1 = data[letter1]["count"]
         count2 = data[letter2]["count"]
@@ -205,13 +212,13 @@ def reset_personality_aggregation():
     """
     Resets the global personality aggregation to its initial state.
     """
-    global personality_aggregation,url
-    url=None
+    global personality_aggregation, url
+    url = None
     personality_aggregation = {
-        "IE": {"I": {"count": 0, "conf_sum": 0.0}, "E": {"count": 0, "conf_sum": 0.0}},
-        "NS": {"N": {"count": 0, "conf_sum": 0.0}, "S": {"count": 0, "conf_sum": 0.0}},
-        "FT": {"F": {"count": 0, "conf_sum": 0.0}, "T": {"count": 0, "conf_sum": 0.0}},
-        "JP": {"J": {"count": 0, "conf_sum": 0.0}, "P": {"count": 0, "conf_sum": 0.0}}
+        "IE": {"I": {"count": 0, "conf_sum": 0.0}, "E": {"count": 0, "conf_sum": 0.0}, "P_sum": 0.0, "n_posts": 0},
+        "NS": {"N": {"count": 0, "conf_sum": 0.0}, "S": {"count": 0, "conf_sum": 0.0}, "P_sum": 0.0, "n_posts": 0},
+        "FT": {"F": {"count": 0, "conf_sum": 0.0}, "T": {"count": 0, "conf_sum": 0.0}, "P_sum": 0.0, "n_posts": 0},
+        "JP": {"J": {"count": 0, "conf_sum": 0.0}, "P": {"count": 0, "conf_sum": 0.0}, "P_sum": 0.0, "n_posts": 0}
     }
 
 def get_aggregated_details():
@@ -223,6 +230,74 @@ def get_aggregated_details():
     """
     global personality_aggregation
     return personality_aggregation
+
+# -----------------------------------------------------------------------------
+# New functions for cognitive score calculation
+
+def mbti_to_bigfive(mbti_scores):
+    """
+    Convert MBTI probabilities to Big Five scores using hypothetical regression weights.
+    
+    Args:
+        mbti_scores (list): [P(E), P(S), P(T), P(P)]
+        
+    Returns:
+        list: [Openness, Conscientiousness, Extraversion, Agreeableness, Neuroticism]
+    """
+    # Openness: High N (low S) increases Openness
+    O = 0.5 - 0.3 * mbti_scores[1] + 0.1 * mbti_scores[0] + 0.05 * mbti_scores[2] - 0.1 * mbti_scores[3]
+    # Conscientiousness: High J (low P) increases Conscientiousness
+    C = 0.5 - 0.4 * mbti_scores[3] + 0.05 * mbti_scores[0] + 0.1 * mbti_scores[1] + 0.05 * mbti_scores[2]
+    # Extraversion: High E increases Extraversion
+    E = 0.2 + 0.8 * mbti_scores[0] + 0.05 * mbti_scores[1] - 0.1 * mbti_scores[2] + 0.1 * mbti_scores[3]
+    # Agreeableness: High F (low T) increases Agreeableness
+    A = 0.5 - 0.3 * mbti_scores[2] + 0.1 * mbti_scores[0] + 0.05 * mbti_scores[1] + 0.05 * mbti_scores[3]
+    # Neuroticism: Assumed influences (e.g., higher T may increase)
+    N = 0.3 - 0.2 * mbti_scores[0] + 0.1 * mbti_scores[1] + 0.15 * mbti_scores[2] + 0.1 * mbti_scores[3]
+    
+    return [O, C, E, A, N]
+
+def bigfive_to_cognitive(bigfive_scores):
+    """
+    Convert Big Five scores to a cognitive score using hypothetical regression weights.
+    
+    Args:
+        bigfive_scores (list): [Openness, Conscientiousness, Extraversion, Agreeableness, Neuroticism]
+        
+    Returns:
+        float: Cognitive score (e.g., scaled like IQ, mean 100, SD 15)
+    """
+    # Hypothetical coefficients based on correlations
+    intercept = 100  # Base IQ-like score
+    weights = [5, 2, 1, 0, -3]  # O positive, N negative, others minor
+    
+    cognitive_score = intercept + sum(w * s for w, s in zip(weights, bigfive_scores))
+    return cognitive_score
+
+def get_cognitive_score():
+    """
+    Compute cognitive score from the current personality aggregation.
+    
+    Returns:
+        float: Cognitive score based on aggregated MBTI probabilities
+    """
+    global personality_aggregation
+    
+    # Extract average probabilities for each dichotomy
+    mbti_scores = []
+    for dichotomy in personality_type:
+        P_sum = personality_aggregation[dichotomy]["P_sum"]
+        n_posts = personality_aggregation[dichotomy]["n_posts"]
+        avg_P = P_sum / n_posts if n_posts > 0 else 0.5  # Default to 0.5 if no posts
+        mbti_scores.append(avg_P)
+    
+    # Convert MBTI scores to Big Five
+    bigfive_scores = mbti_to_bigfive(mbti_scores)
+    
+    # Convert Big Five to cognitive score
+    cognitive_score = bigfive_to_cognitive(bigfive_scores)
+    
+    return cognitive_score
 
 # -----------------------------------------------------------------------------
 # For testing purposes: load models and perform a test aggregation.
@@ -252,7 +327,7 @@ if __name__ == "__main__":
             print("Predicted MBTI for this post:", prediction['MBTI'])
             
             # Update the aggregation with the current post.
-            update_personality_aggregation(post,"NONE", models, vectorizer)
+            update_personality_aggregation(post, "NONE", models, vectorizer)
             
             # Retrieve the current overall personality and detailed aggregates.
             overall = get_aggregated_personality()
@@ -263,13 +338,17 @@ if __name__ == "__main__":
             for dichotomy, data in details.items():
                 print(f" {dichotomy}:")
                 for letter, stats in data.items():
-                    avg = stats['conf_sum'] / stats['count'] if stats['count'] > 0 else 0.0
-                    print(f"   {letter}: count = {stats['count']}, average confidence = {avg:.2f}")
+                    if isinstance(stats, dict):  # Only print I/E, N/S, etc. stats
+                        avg = stats['conf_sum'] / stats['count'] if stats['count'] > 0 else 0.0
+                        print(f"   {letter}: count = {stats['count']}, average confidence = {avg:.2f}")
+            
+            # Get and display the current cognitive score
+            cognitive_score = get_cognitive_score()
+            print(f"Current Cognitive Score: {cognitive_score:.2f}")
             print("-" * 50)
         
         # Final overall personality after processing all posts.
         print("\nFinal Overall MBTI:", overall)
+        print(f"Final Cognitive Score: {get_cognitive_score():.2f}")
     except Exception as e:
         print("Error during testing:", e)
-
-

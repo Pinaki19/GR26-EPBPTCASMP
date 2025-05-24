@@ -177,6 +177,23 @@ async def analyze_personality(body: Input):
         for expr in expressions:
             print(expr)
 
+# COGNITIVE Score calculation can be implemented by:
+    # for dichotomy, data in aggregates.items():
+    #     print(f" {dichotomy}:")
+    #     for letter, stats in data.items():
+    #         if isinstance(stats, dict):
+    #             avg = stats['conf_sum'] / stats['count'] if stats['count'] > 0 else 0.0
+    #             print(f"   {letter}: count = {stats['count']}, average confidence = {avg:.2f}")
+    #         else:
+    #             # For non-dictionary values, simply print the value.
+    #             print(f"   {letter}: {stats}")
+    #     print("-" * 50)
+
+    
+    # # Get and print the cognitive score
+    # cognitive_score = get_cognitive_score()
+    # print(f"Current Cognitive Score: {cognitive_score:.2f}")
+
     # Update global personality aggregation with the combined text
     current_personality=update_personality_aggregation(combined_text,url, models, vectorizer)
     overall_result = get_aggregated_personality()
