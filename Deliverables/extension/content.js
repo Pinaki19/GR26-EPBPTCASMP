@@ -156,9 +156,10 @@ function getProfilePhotoUrl(name) {
 
 function isFacebookProfilePage() {
   const url = window.location.href;
-  const profileRegex = /^https:\/\/www\.facebook\.com\/(profile\.php\?id=\d+|[a-zA-Z0-9.]+)$/;
+  const profileRegex = /^https:\/\/www\.facebook\.com\/[a-zA-Z0-9.]+\/?$/;
   return profileRegex.test(url);
 }
+
 
 
 async function sendName(){

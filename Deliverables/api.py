@@ -201,7 +201,7 @@ async def analyze_personality(body: Input):
     websocket = url_to_socket_map.get(url)
     if websocket:
         try:
-            await websocket.send_text(json.dumps({"type": "update", "result":Result,"aggregate":aggregates}))
+            await websocket.send_text(json.dumps({"type": "update",'url':url,"result":Result,"aggregate":aggregates}))
         except Exception as e:
             print(f"Error sending WebSocket message: {e}")
     return {"data": current_personality}

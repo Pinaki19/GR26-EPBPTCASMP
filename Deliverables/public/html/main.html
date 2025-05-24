@@ -234,7 +234,8 @@
                     stopped=false;
                 } 
                 else if (data.type === "update") {
-                    if(stopped)
+                    const profileLink = document.getElementById("profileLink").value;
+                    if(stopped|| profileLink!=data.url)
                         return;
                     updateChart(data.result);
                     displayPersonalityResults(data.aggregate);
