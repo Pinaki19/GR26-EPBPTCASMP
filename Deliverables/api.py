@@ -92,7 +92,12 @@ async def websocket_endpoint(websocket: WebSocket):
                 link = msg_data  # Profile URL
                 print("New Profile: ", link)
                 # Store WebSocket connection associated with the profile URL
-                url_to_socket_map[link] = websocket  
+                #url_to_socket_map[link] = websocket  
+                # TODO: Since we are handling batch profiles. We are using a list rather than a string.
+                if isinstance(link, list):
+                    link = link[0]
+
+                url_to_socket_map[link] = websocket
                 reset_personality_aggregation()  # Reset aggregation for a new session
                 send_data(msg_type="PROFILE", msg_data=link)
 

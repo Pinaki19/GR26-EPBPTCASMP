@@ -1,0 +1,147 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; /* Use CSS variable for sans font */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  @apply text-base leading-relaxed; /* Slightly larger base text and relaxed line height */
+}
+
+/* Apply heading font to heading elements */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; /* Use CSS variable for heading font */
+}
+
+
+@layer base {
+  :root {
+    /* --- Light Theme --- */
+    /* Primary Palette (Blue) */
+    --primary: 217 91% 60%; /* Vibrant Blue */
+    --primary-foreground: 0 0% 100%; /* White */
+
+    /* Secondary Palette (Cool Gray) */
+    --secondary: 220 14% 96%; /* Light Cool Gray */
+    --secondary-foreground: 220 9% 30%; /* Dark Cool Gray */
+
+    /* Accent Palette (Green) */
+    --accent: 142 71% 45%; /* Lively Green */
+    --accent-foreground: 0 0% 100%; /* White */
+
+    /* Neutral Palette */
+    --background: 0 0% 100%; /* White */
+    --foreground: 224 10% 10%; /* Near Black */
+    --card: 0 0% 100%; /* White */
+    --card-foreground: 224 10% 10%; /* Near Black */
+    --popover: 0 0% 100%; /* White */
+    --popover-foreground: 224 10% 10%; /* Near Black */
+    --muted: 220 13% 91%; /* Light Gray */
+    --muted-foreground: 220 9% 45%; /* Medium Gray */
+
+    /* Other */
+    --border: 220 13% 88%; /* Slightly darker border */
+    --input: 220 13% 88%; /* Same as border */
+    --ring: 217 91% 65%; /* Slightly lighter blue for focus rings */
+    --radius: 0.75rem; /* Existing radius */
+
+    /* Destructive Palette (Red) */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Chart Colors */
+    --chart-1: 217 91% 60%; /* Primary Blue */
+    --chart-2: 142 71% 45%; /* Accent Green */
+    --chart-3: 27 98% 55%; /* Orange */
+    --chart-4: 300 76% 60%; /* Purple */
+    --chart-5: 48 96% 53%; /* Yellow */
+
+    /* Sidebar - Keeping consistent with overall theme */
+    --sidebar-background: 220 14% 97%; /* Slightly off-white */
+    --sidebar-foreground: 220 9% 30%; /* Dark Cool Gray */
+    --sidebar-primary: 217 91% 60%; /* Primary Blue */
+    --sidebar-primary-foreground: 0 0% 100%; /* White */
+    --sidebar-accent: 220 13% 91%; /* Light Gray */
+    --sidebar-accent-foreground: 224 10% 10%; /* Near Black */
+    --sidebar-border: 220 13% 86%; /* Slightly darker border */
+    --sidebar-ring: 217 91% 65%; /* Primary blue ring */
+  }
+
+  .dark {
+    /* --- Dark Theme --- */
+    /* Primary Palette (Blue) */
+    --primary: 217 91% 60%; /* Vibrant Blue (same as light) */
+    --primary-foreground: 0 0% 100%; /* White */
+
+    /* Secondary Palette (Cool Gray) */
+    --secondary: 220 10% 15%; /* Dark Cool Gray */
+    --secondary-foreground: 220 10% 80%; /* Lighter Cool Gray */
+
+    /* Accent Palette (Green) */
+    --accent: 142 61% 45%; /* Slightly desaturated Green */
+    --accent-foreground: 0 0% 100%; /* White */
+
+    /* Neutral Palette */
+    --background: 224 10% 10%; /* Near Black */
+    --foreground: 210 20% 98%; /* Light Gray/White */
+    --card: 224 10% 12%; /* Slightly lighter than background */
+    --card-foreground: 210 20% 98%; /* Light Gray/White */
+    --popover: 224 10% 10%; /* Near Black */
+    --popover-foreground: 210 20% 98%; /* Light Gray/White */
+    --muted: 220 10% 20%; /* Dark Gray */
+    --muted-foreground: 220 10% 65%; /* Medium-Light Gray */
+
+    /* Other */
+    --border: 220 10% 25%; /* Darker Border */
+    --input: 220 10% 25%; /* Same as border */
+    --ring: 217 91% 60%; /* Primary Blue ring */
+    --radius: 0.75rem;
+
+    /* Destructive Palette (Red) */
+    --destructive: 0 74% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Chart Colors (Adjusted for Dark Mode) */
+    --chart-1: 217 91% 60%;
+    --chart-2: 142 61% 45%;
+    --chart-3: 27 88% 60%;
+    --chart-4: 300 66% 65%;
+    --chart-5: 48 86% 58%;
+
+    /* Sidebar - Dark */
+    --sidebar-background: 224 10% 12%; /* Card color */
+    --sidebar-foreground: 220 10% 80%; /* Lighter Cool Gray */
+    --sidebar-primary: 217 91% 60%; /* Primary Blue */
+    --sidebar-primary-foreground: 0 0% 100%; /* White */
+    --sidebar-accent: 220 10% 20%; /* Muted color */
+    --sidebar-accent-foreground: 210 20% 98%; /* Foreground color */
+    --sidebar-border: 220 10% 25%; /* Border color */
+    --sidebar-ring: 217 91% 60%; /* Primary blue ring */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    /* Removed default background to allow main container to set it */
+    @apply text-foreground;
+  }
+}
+
+/* Updated gradient animation for title and background */
+@keyframes gradient-animation {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Add subtle box shadow to cards */
+@layer components {
+  .card {
+    @apply shadow-md hover:shadow-lg transition-shadow duration-300;
+  }
+}
