@@ -197,8 +197,7 @@
                 <table class="table table-hover table-bordered shadow mt-3 career-table">
                     <thead class="table-dark">
                         <tr>
-                            <th class="left-align">Career</th>
-                            <th class="left-align">Why It's Suitable</th>
+                            <th class="left-align">Career Choices</th>
                         </tr>
                     </thead>
                     <tbody id="careerTable"></tbody>
@@ -304,7 +303,11 @@
             // Hide the table and chart
             document.getElementById("tableContainer").classList.add("d-none");
             document.getElementById("chartContainer").classList.add("d-none");
-        
+            let cogtitiveTable = document.getElementById("cognitive-result");
+            if (cogtitiveTable) {
+                cogtitiveTable.remove(); // Removes the cognitive result display
+            }
+            
             // Clear table contents
             document.getElementById("personalityTable").innerHTML = "";
         
@@ -385,43 +388,58 @@
         async function displayPersonalityResults(data,cog_score) {
             let result = calculatePersonality(data);
             let newPersonality = result.personality;
-            
+            let cog_now=0;
             let container = document.getElementById("First");
             let existingResult = document.getElementById("personality-result");
+            let cognitiveResult = document.getElementById("cognitive-result");
         
             if (!existingResult) {
                 existingResult = document.createElement("div");
                 existingResult.id = "personality-result";
                 container.appendChild(existingResult);
             }
+
+            if(!cognitiveResult) {
+                cognitiveResult = document.createElement("div");
+                cognitiveResult.id = "cognitive-result";
+                container.appendChild(cognitiveResult);
+            }
         
             existingResult.innerHTML = `
                 <div class="alert alert-info mt-4 p-4 border rounded shadow" style="background-color: #e3f2fd; border-left: 5px solid #0d6efd;">
                     <h4 class="text-primary text-center">Predicted Personality Type: <strong>${result.personality}</strong></h4>
-                    <h5 class="text-primary text-center">Predicted Cognitive Score: <strong style="color:black;">${cog_score}</strong></h5>
                     <div class="mt-3">
                         <h5 class="text-secondary">Confidence Levels:</h5>
                         ${generateConfidenceBars(result.personality, result.oppositePersonality, result.confidence)}
                     </div>
                 </div>
             `;
+
         
             // Call the API only if the personality type has changed
-            if (newPersonality !== lastPredictedPersonality) {
+            if (newPersonality !== lastPredictedPersonality || cog_now!=cog_score) {
                 lastPredictedPersonality = newPersonality;
-        
+                cog_now=cog_score;
                 try {
-                    let response = await fetch(`/job_result?mbti_type=${newPersonality}`);
+                    let response = await fetch(`/job_result?mbti_type=${newPersonality}&cog_score=${cog_score}`);
                     let personalityData = await response.json();
-        
+                    let word=(personalityData.cognitive_category || "Unknown")
+                        .split('_')[0]
+                    let cog_type = word.charAt(0).toUpperCase() + word.slice(1)
+                        
                     if (!personalityData || personalityData.error) {
                         console.error("Invalid personality type:", newPersonality);
                         return;
                     }
-        
+                    cognitiveResult.innerHTML = `
+                        <div class="alert alert-info mt-4 p-4 border rounded shadow" style="background-color: #e3f2fd; border-left: 5px solid #0d6efd;">
+                            <h5 class="text-primary text-center">Predicted Cognitive Score: <strong style="color:black;">${cog_score}</strong></h5>
+                            <h5 class="text-primary text-center">Predicted Cognitive Category: <strong style="color:black;">${cog_type}</strong></h5>
+                        </div>
+                    `;
                     // Update the UI with fetched personality details
                     updatePersonalityUI(newPersonality, result.confidence, personalityData);
-        
+                    updateStrengthsAndWeaknesses(personalityData.good_qualities, personalityData.needs_improvement);
                 } catch (error) {
                     console.error("Error fetching MBTI details:", error);
                 }
@@ -429,46 +447,47 @@
         }
         
         function updatePersonalityUI(personality, confidence, data) {
-            
-            document.getElementById("st_wk_table").classList.remove("d-none");
-            document.getElementById("career").classList.remove("d-none");
-            let goodQualitiesList = document.getElementById("goodQualitiesList");
-            let needsImprovementList = document.getElementById("needsImprovementList");
             let careerTable = document.getElementById("careerTable");
+            document.getElementById("career").classList.remove("d-none");
             document.getElementById("MBTI_type").innerText=personality;
 
-            if (!goodQualitiesList || !needsImprovementList || !careerTable) {
+            careerTable.innerHTML = ""; // Clear previous content
+            data.recommended_jobs.forEach(job => {
+                let row = `<tr>
+                    <td><strong>${job}</strong></td>
+                </tr>`;
+                careerTable.innerHTML += row;
+            });
+        }
+        
+        function updateStrengthsAndWeaknesses(goodQualities, needsImprovement) {
+            document.getElementById("st_wk_table").classList.remove("d-none");
+        
+            let goodQualitiesList = document.getElementById("goodQualitiesList");
+            let needsImprovementList = document.getElementById("needsImprovementList");
+            
+            if (!goodQualitiesList || !needsImprovementList) {
                 console.error("Error: One or more elements are missing in the HTML!");
                 return;
-            }
-        
+            } 
+
             goodQualitiesList.innerHTML = "";
             needsImprovementList.innerHTML = "";
-            careerTable.innerHTML = "";
         
-            data.good_qualities.forEach(quality => {
+            goodQualities.forEach(quality => {
                 let li = document.createElement("li");
                 li.classList.add("list-group-item");
                 li.innerHTML = `<i class="bi bi-check2-circle text-success"></i> ${quality}`;
                 goodQualitiesList.appendChild(li);
             });
         
-            data.needs_improvement.forEach(improvement => {
+            needsImprovement.forEach(improvement => {
                 let li = document.createElement("li");
                 li.classList.add("list-group-item");
                 li.innerHTML = `<i class="bi bi-x-circle text-danger"></i> ${improvement}`;
                 needsImprovementList.appendChild(li);
-            });
-        
-            data.suitable_careers.forEach(career => {
-                let row = `<tr>
-                    <td><strong>${career.career}</strong></td>
-                    <td>${career.reason}</td>
-                </tr>`;
-                careerTable.innerHTML += row;
-            });
+            }); 
         }
-        
 
     
         function calculatePersonality(data) {

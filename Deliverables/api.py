@@ -16,7 +16,7 @@ from typing import List
 import socket
 from contextlib import asynccontextmanager
 from utils.DBN_ANN import ANN, DBN, RBM, train_ann_model, train_dbn_model
-
+from utils.cognitive import predict_jobs
 from utils.predictor import (
     load_models, 
     update_personality_aggregation, 
@@ -215,28 +215,14 @@ async def analyze_personality(body: Input):
 
 
 @app.get('/job_result')
-def get_mbti_details(mbti_type: str = Query(None, title="MBTI Personality Type")):
-    file_path = os.path.join(os.path.dirname(__file__), "job_data.json")
-
-    # Load MBTI data
-    try:
-        with open(file_path, "r") as file:
-            data = json.load(file)
-    except FileNotFoundError:
-        return {"error": "job_data.json file not found"}
-    except json.JSONDecodeError:
-        return {"error": "Invalid JSON format in job_data.json"}
+def get_mbti_details(mbti_type: str = Query(None, title="MBTI Personality Type"),cog_score: float = Query(None, title="Cognitive Score")):
+    result=predict_jobs(mbti_type, cog_score)
 
     # Ensure mbti_type is provided and exists in data
     if not mbti_type:
         return {"error": "Missing mbti_type parameter"}
 
-    mbti_data = data.get(mbti_type.upper())
-    
-    if not mbti_data:
-        return {"error": "Personality type not found"}
-
-    return {"personality": mbti_type.upper(), **mbti_data}
+    return {"personality": mbti_type.upper(), **result}
 
 
 

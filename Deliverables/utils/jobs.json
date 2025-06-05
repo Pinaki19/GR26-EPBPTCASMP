@@ -1,0 +1,675 @@
+{
+  "INTJ": {
+    "high_cognitive": [
+      "Data Scientist",
+      "Software Engineer",
+      "Research Scientist",
+      "Mathematician",
+      "Theoretical Physicist",
+      "Architect",
+      "Aerospace Engineer",
+      "Surgeon",
+      "Lawyer",
+      "Judge",
+      "Psychologist",
+      "Management Consultant",
+      "Strategist",
+      "University Professor",
+      "Urban Planner",
+      "Biomedical Engineer"
+    ],
+    "moderate_cognitive": [
+      "Financial Analyst",
+      "Systems Analyst",
+      "Project Manager",
+      "Business Analyst",
+      "Technical Writer"
+    ],
+    "routine": [
+      "Technical Support Specialist",
+      "Documentation Analyst",
+      "CAD Operator"
+    ],
+    "good_qualities": [
+      "Strategic thinkers",
+      "Highly independent",
+      "Confident and decisive",
+      "High standards for themselves and others",
+      "Innovative and insightful"
+    ],
+    "needs_improvement": [
+      "Can be overly critical",
+      "May struggle with teamwork",
+      "Insensitive to others' emotions",
+      "Reluctant to share ideas",
+      "Can be perfectionistic"
+    ]
+  },
+  "INTP": {
+    "high_cognitive": [
+      "Computer Programmer",
+      "Data Analyst",
+      "Philosopher",
+      "Researcher",
+      "Economist",
+      "Software Developer",
+      "Statistician",
+      "Physics Professor",
+      "Forensic Scientist",
+      "AI Researcher",
+      "Logician",
+      "Cryptographer",
+      "Biochemist",
+      "Game Designer",
+      "Policy Analyst"
+    ],
+    "moderate_cognitive": [
+      "Web Developer",
+      "UX Designer",
+      "Market Research Analyst",
+      "Technical Trainer",
+      "Database Administrator"
+    ],
+    "routine": [
+      "Data Annotator",
+      "IT Support Technician",
+      "QA Tester"
+    ],
+    "good_qualities": [
+      "Logical and analytical",
+      "Curious and open-minded",
+      "Independent thinker",
+      "Creative problem solver",
+      "Objective and fair"
+    ],
+    "needs_improvement": [
+      "Can be overly abstract",
+      "Struggles with routine",
+      "May appear detached",
+      "Prone to procrastination",
+      "Avoids emotional expression"
+    ]
+  },
+  "ENTJ": {
+    "high_cognitive": [
+      "CEO",
+      "Entrepreneur",
+      "Corporate Strategist",
+      "Marketing Director",
+      "Investment Banker",
+      "Business Consultant",
+      "Lawyer",
+      "Politician",
+      "Executive Coach",
+      "Real Estate Developer",
+      "Financial Planner",
+      "Operations Director",
+      "Public Relations Manager",
+      "Supply Chain Manager"
+    ],
+    "moderate_cognitive": [
+      "Product Owner",
+      "Business Analyst",
+      "Sales Executive",
+      "Program Manager",
+      "Marketing Manager"
+    ],
+    "routine": [
+      "Office Supervisor",
+      "Retail Manager",
+      "Team Coordinator"
+    ],
+    "good_qualities": [
+      "Strong leadership",
+      "Highly strategic",
+      "Confident decision-maker",
+      "Efficient and organized",
+      "Goal-oriented"
+    ],
+    "needs_improvement": [
+      "Can be overly dominant",
+      "Insensitive to emotions",
+      "May overlook details",
+      "Intolerant of inefficiency",
+      "Highly competitive"
+    ]
+  },
+  "ENTP": {
+    "high_cognitive": [
+      "Startup Founder",
+      "Creative Director",
+      "Journalist",
+      "Marketing Strategist",
+      "Public Speaker",
+      "Venture Capitalist",
+      "Product Manager",
+      "Copywriter",
+      "Advertising Executive",
+      "Innovation Consultant",
+      "Debate Coach",
+      "Political Analyst",
+      "Screenwriter",
+      "Social Media Manager"
+    ],
+    "moderate_cognitive": [
+      "Customer Experience Manager",
+      "Content Strategist",
+      "Marketing Analyst",
+      "Brand Manager",
+      "Event Coordinator"
+    ],
+    "routine": [
+      "Brand Ambassador",
+      "Retail Sales",
+      "Client Onboarding Agent"
+    ],
+    "good_qualities": [
+      "Innovative and original",
+      "Excellent brainstormers",
+      "Charismatic and energetic",
+      "Knowledgeable",
+      "Quick thinkers"
+    ],
+    "needs_improvement": [
+      "May be argumentative",
+      "Insensitive to others' feelings",
+      "Intolerant of routine tasks",
+      "Can be easily bored",
+      "May procrastinate"
+    ]
+  },
+  "INFJ": {
+    "high_cognitive": [
+      "Psychologist",
+      "Therapist",
+      "Nonprofit Director",
+      "Human Rights Advocate",
+      "Writer",
+      "Mediator",
+      "Clergy",
+      "Educational Consultant"
+    ],
+    "moderate_cognitive": [
+      "Counselor",
+      "Social Worker",
+      "Teacher",
+      "Life Coach",
+      "Community Organizer",
+      "Career Counselor",
+      "Program Coordinator",
+      "Grant Writer"
+    ],
+    "routine": [
+      "School Librarian",
+      "Receptionist at Nonprofits",
+      "Assistant Social Worker"
+    ],
+    "good_qualities": [
+      "Insightful and intuitive",
+      "Empathetic and compassionate",
+      "Decisive",
+      "Altruistic",
+      "Organized and prepared"
+    ],
+    "needs_improvement": [
+      "Can be overly sensitive",
+      "Prone to burnout",
+      "Perfectionistic tendencies",
+      "May struggle with openness",
+      "Can be overly idealistic"
+    ]
+  },
+  "INFP": {
+    "high_cognitive": [
+      "Writer",
+      "Poet",
+      "Therapist",
+      "Journalist",
+      "Editor",
+      "Grant Writer",
+      "Environmental Advocate"
+    ],
+    "moderate_cognitive": [
+      "Counselor",
+      "Social Worker",
+      "Librarian",
+      "Teacher",
+      "Nonprofit Worker",
+      "Artist",
+      "Musician",
+      "Creative Consultant"
+    ],
+    "routine": [
+      "Proofreader",
+      "Assistant Editor",
+      "Museum Attendant"
+    ],
+    "good_qualities": [
+      "Creative and imaginative",
+      "Deeply empathetic",
+      "Idealistic and passionate",
+      "Open-minded and curious",
+      "Loyal to values"
+    ],
+    "needs_improvement": [
+      "Can be overly idealistic",
+      "Tends to avoid conflicts",
+      "Struggles with self-discipline",
+      "Highly sensitive to criticism",
+      "May withdraw under stress"
+    ]
+  },
+  "ENFJ": {
+    "high_cognitive": [
+      "Community Leader",
+      "Diplomat",
+      "Policy Advisor",
+      "Organizational Development Consultant"
+    ],
+    "moderate_cognitive": [
+      "Teacher",
+      "HR Manager",
+      "Event Planner",
+      "Public Relations Specialist",
+      "Motivational Speaker",
+      "Social Worker",
+      "Counselor",
+      "Training Manager",
+      "Nonprofit Manager",
+      "Career Advisor",
+      "Fundraiser",
+      "Life Coach"
+    ],
+    "routine": [
+      "Front Desk Coordinator",
+      "Sales Support",
+      "Client Relations Assistant"
+    ],
+    "good_qualities": [
+      "Charismatic leader",
+      "Empathetic and warm",
+      "Excellent communicator",
+      "Organized and proactive",
+      "Encourages personal growth"
+    ],
+    "needs_improvement": [
+      "Can be overly idealistic",
+      "Struggles with personal boundaries",
+      "Prone to stress",
+      "May focus too much on others",
+      "Seeks validation"
+    ]
+  },
+  "ENFP": {
+    "high_cognitive": [
+      "Journalist",
+      "Creative Writer",
+      "Travel Writer",
+      "Entrepreneur",
+      "Advertising Creative",
+      "Campaign Manager",
+      "Art Director"
+    ],
+    "moderate_cognitive": [
+      "Marketing Specialist",
+      "Actor",
+      "Event Coordinator",
+      "Public Relations Manager",
+      "Social Media Influencer",
+      "Youth Counselor",
+      "Motivational Speaker",
+      "Content Creator"
+    ],
+    "routine": [
+      "Brand Promoter",
+      "Travel Guide",
+      "Reception Host"
+    ],
+    "good_qualities": [
+      "Enthusiastic and energetic",
+      "Creative and spontaneous",
+      "Great communicators",
+      "Empathetic and open-minded",
+      "Optimistic and inspiring"
+    ],
+    "needs_improvement": [
+      "Struggles with structure",
+      "Easily distracted",
+      "Overcommits to projects",
+      "Avoids routine tasks",
+      "May struggle with follow-through"
+    ]
+  },
+  "ISTJ": {
+    "high_cognitive": [
+      "IT Auditor",
+      "Risk Analyst",
+      "Network Security Analyst",
+      "Forensic Accountant",
+      "Compliance Auditor"
+    ],
+    "moderate_cognitive": [
+      "Accountant",
+      "Auditor",
+      "Logistics Manager",
+      "Financial Analyst",
+      "Office Manager",
+      "Inspector",
+      "Compliance Officer",
+      "Bank Manager",
+      "Archivist",
+      "Quality Control Specialist",
+      "Supply Chain Analyst",
+      "Records Manager",
+      "Tax Preparer"
+    ],
+    "routine": [
+      "Data Entry Specialist",
+      "File Clerk",
+      "Inventory Specialist",
+      "Administrative Clerk"
+    ],
+    "good_qualities": [
+      "Responsible and dependable",
+      "Highly practical",
+      "Organized and detail-oriented",
+      "Hardworking and diligent",
+      "Loyal and honest"
+    ],
+    "needs_improvement": [
+      "Can be overly rigid",
+      "May struggle with change",
+      "Not expressive emotionally",
+      "Can be judgmental",
+      "Prefers tradition over innovation"
+    ]
+  },
+  "ISFJ": {
+    "high_cognitive": [
+      "Medical Records Analyst",
+      "Healthcare Compliance Officer",
+      "Education Program Evaluator",
+      "Patient Care Coordinator",
+      "Clinical Research Coordinator"
+    ],
+    "moderate_cognitive": [
+      "Nurse",
+      "Teacher",
+      "Librarian",
+      "Social Worker",
+      "Medical Assistant",
+      "Customer Service Manager",
+      "Bookkeeper",
+      "Paralegal",
+      "Dental Hygienist",
+      "Childcare Worker",
+      "Veterinary Technician",
+      "Human Resources Assistant"
+    ],
+    "routine": [
+      "Administrative Assistant",
+      "Office Administrator",
+      "Receptionist",
+      "Medical Receptionist"
+    ],
+    "good_qualities": [
+      "Loyal and dependable",
+      "Caring and empathetic",
+      "Organized and detail-oriented",
+      "Practical and hardworking",
+      "Supportive of others"
+    ],
+    "needs_improvement": [
+      "May avoid confrontation",
+      "Struggles with self-care",
+      "Tends to be overly self-sacrificing",
+      "Dislikes sudden changes",
+      "Finds it hard to express personal needs"
+    ]
+  },
+  "ESTJ": {
+    "high_cognitive": [
+      "Project Manager",
+      "Business Manager",
+      "Military Officer",
+      "Judge",
+      "Operations Manager",
+      "Financial Manager",
+      "Corporate Trainer"
+    ],
+    "moderate_cognitive": [
+      "Supervisor",
+      "HR Manager",
+      "Sales Manager",
+      "Construction Manager",
+      "Police Officer",
+      "Logistics Coordinator",
+      "Insurance Agent",
+      "Bank Manager"
+    ],
+    "routine": [
+      "Inventory Clerk",
+      "Payroll Officer",
+      "Customer Billing Specialist",
+      "Shipping Coordinator"
+    ],
+    "good_qualities": [
+      "Dedicated and strong-willed",
+      "Excellent organizers",
+      "Loyal and reliable",
+      "Direct and honest",
+      "Enjoys creating order"
+    ],
+    "needs_improvement": [
+      "Inflexible and stubborn",
+      "Uncomfortable with unconventional situations",
+      "Judgmental",
+      "May struggle with emotions",
+      "Can be overly focused on social status"
+    ]
+  },
+  "ESFJ": {
+    "high_cognitive": [
+      "Healthcare Administrator",
+      "Community Development Director",
+      "Education Administrator"
+    ],
+    "moderate_cognitive": [
+      "Teacher",
+      "Nurse",
+      "Event Planner",
+      "HR Specialist",
+      "Customer Service Manager",
+      "Office Manager",
+      "Social Worker",
+      "Retail Manager",
+      "Public Relations Coordinator",
+      "Community Service Manager",
+      "Childcare Director"
+    ],
+    "routine": [
+      "Flight Attendant",
+      "Sales Representative",
+      "Customer Support Representative",
+      "Receptionist"
+    ],
+    "good_qualities": [
+      "Warm and caring",
+      "Highly organized",
+      "Loyal and dependable",
+      "Encourages harmony",
+      "Strong interpersonal skills"
+    ],
+    "needs_improvement": [
+      "Can be overly self-sacrificing",
+      "May struggle with criticism",
+      "Too focused on social status",
+      "Finds it hard to say no",
+      "Dislikes uncertainty"
+    ]
+  },
+  "ISTP": {
+    "high_cognitive": [
+      "Pilot",
+      "Paramedic",
+      "Forensic Technician",
+      "Robotics Technician",
+      "Cybersecurity Technician"
+    ],
+    "moderate_cognitive": [
+      "Software Tester",
+      "Firefighter",
+      "IT Support Specialist",
+      "Field Service Engineer",
+      "Surveyor"
+    ],
+    "routine": [
+      "Mechanic",
+      "Technician",
+      "Electrician",
+      "Carpenter",
+      "Construction Worker",
+      "Automotive Technician",
+      "Plumber",
+      "Machinist"
+    ],
+    "good_qualities": [
+      "Practical and resourceful",
+      "Highly observant",
+      "Adaptable and flexible",
+      "Independent thinker",
+      "Logical problem solver"
+    ],
+    "needs_improvement": [
+      "Can be impulsive",
+      "May struggle with commitment",
+      "Insensitive to emotions",
+      "Easily bored",
+      "Dislikes strict rules"
+    ]
+  },
+  "ISFP": {
+    "high_cognitive": [
+      "Creative Director",
+      "UX/UI Design Lead",
+      "Culinary Innovator",
+      "Art Curator",
+      "Music Composer"
+    ],
+    "moderate_cognitive": [
+      "Artist",
+      "Graphic Designer",
+      "Photographer",
+      "Musician",
+      "Chef",
+      "Interior Designer",
+      "Veterinary Assistant",
+      "Florist",
+      "Fashion Designer",
+      "Animal Trainer",
+      "Recreation Worker",
+      "Dancer"
+    ],
+    "routine": [
+      "Craftsperson",
+      "Landscaper",
+      "Retail Associate",
+      "Animal Caretaker"
+    ],
+    "good_qualities": [
+      "Creative and artistic",
+      "Sensitive and warm",
+      "Flexible and open-minded",
+      "Adventurous",
+      "Observant and detail-oriented"
+    ],
+    "needs_improvement": [
+      "May avoid conflicts",
+      "Struggles with long-term planning",
+      "Can be overly private",
+      "Easily overwhelmed",
+      "Dislikes strict schedules"
+    ]
+  },
+  "ESTP": {
+    "high_cognitive": [
+      "Entrepreneur",
+      "Paramedic",
+      "Stockbroker",
+      "Sports Agent",
+      "Emergency Management Coordinator"
+    ],
+    "moderate_cognitive": [
+      "Sales Representative",
+      "Real Estate Agent",
+      "Marketing Coordinator",
+      "Sports Coach",
+      "Police Officer",
+      "Construction Supervisor",
+      "Event Promoter",
+      "Fitness Trainer"
+    ],
+    "routine": [
+      "Tour Guide",
+      "Bartender",
+      "Mechanic",
+      "Delivery Driver"
+    ],
+    "good_qualities": [
+      "Energetic and action-oriented",
+      "Quick thinker",
+      "Confident and persuasive",
+      "Spontaneous and adaptable",
+      "Handles pressure well"
+    ],
+    "needs_improvement": [
+      "Can be risk-prone",
+      "May struggle with patience",
+      "Avoids deep emotional discussions",
+      "Impulsive decision-making",
+      "Dislikes routine and structure"
+    ]
+  },
+  "ESFP": {
+    "high_cognitive": [
+      "Performing Arts Director",
+      "Brand Strategist",
+      "Tourism Development Officer",
+      "Entertainment Producer",
+      "Creative Consultant"
+    ],
+    "moderate_cognitive": [
+      "Actor",
+      "Event Planner",
+      "Fitness Instructor",
+      "Entertainer",
+      "Cosmetologist",
+      "Photographer",
+      "Public Relations Assistant",
+      "Travel Agent",
+      "Recreation Coordinator",
+      "Social Media Coordinator"
+    ],
+    "routine": [
+      "Tour Guide",
+      "Retail Sales Associate",
+      "Restaurant Host",
+      "Sales Associate",
+      "Event Assistant"
+    ],
+    "good_qualities": [
+      "Energetic and enthusiastic",
+      "Sociable and charismatic",
+      "Spontaneous and fun-loving",
+      "Observant and adaptable",
+      "Encourages teamwork"
+    ],
+    "needs_improvement": [
+      "Can be impulsive",
+      "May struggle with long-term planning",
+      "Avoids serious discussions",
+      "Easily bored",
+      "Needs external validation"
+    ]
+  }
+}

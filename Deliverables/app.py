@@ -188,6 +188,7 @@ def scroll_profile(profile_link):
     height=min(100,last_height)
     lim=500
     cur=0
+    same_height_count=0
     while cur<lim and not STOP:
         cur+=1
         dismiss_alert_if_present(driver)
@@ -204,6 +205,11 @@ def scroll_profile(profile_link):
 
         # Calculate new scroll height and compare with last scroll height
         new_height = driver.execute_script("return document.body.scrollHeight")
+        if( new_height == last_height):
+            same_height_count += 1
+            if same_height_count >= 7:
+                print("No more new content found, stopping scroll.")
+                break
         last_height = new_height
     driver.close()
     driver.switch_to.window(driver.window_handles[0]) 
