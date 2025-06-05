@@ -1,4 +1,5 @@
 import os
+import tempfile
 import time
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -32,6 +33,65 @@ def dismiss_alert_if_present(driver):
         alert.dismiss()  # Dismiss the alert
     except NoAlertPresentException:
         pass
+def setup_chrome_with_extension():
+    global driver, EMAIL, PASSWORD, Logged_in
+
+    chrome_options = webdriver.ChromeOptions()
+
+    prefs = {
+        "profile.default_content_setting_values.notifications": 2
+    }
+    chrome_options.add_experimental_option("prefs", prefs)
+    chrome_options.add_argument('--enable-extensions')
+    chrome_options.add_argument('--disable-extensions-file-access-check')
+    chrome_options.add_argument('--disable-web-security')
+    chrome_options.add_argument('--allow-running-insecure-content')
+    chrome_options.add_argument('--disable-features=VizDisplayCompositor')
+    chrome_options.add_argument('--disable-background-timer-throttling')
+    chrome_options.add_argument('--disable-renderer-backgrounding')
+    chrome_options.add_argument('--disable-backgrounding-occluded-windows')
+    chrome_options.add_argument('--force-device-scale-factor=1')
+    chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+    chrome_options.add_argument('--disable-features=NetworkService,NetworkServiceInProcess')
+    chrome_options.add_argument('--headless=new')
+    chrome_options.add_argument('--window-size=1920,1080')
+
+    # Extension directory
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    extension_directory = os.path.abspath(os.path.join(current_dir, "extension"))
+    print(f"Loading extension from: {extension_directory}")
+    chrome_options.add_argument(f'--load-extension={extension_directory}')
+
+    # Persistent Chrome profile
+    user_data_dir = os.path.abspath("chrome_profile")
+    chrome_options.add_argument(f'--user-data-dir={user_data_dir}')
+
+    return chrome_options
+
+
+def set_up_driver():
+    global driver, FB_HOMEPAGE, Logged_in
+
+    user_data_dir = os.path.abspath("chrome_profile")
+    first_time = not os.path.exists(user_data_dir)
+
+    chrome_options = setup_chrome_with_extension()
+    driver_path = get_driver_path()
+
+    driver = webdriver.Chrome(service=Service(driver_path), options=chrome_options)
+    driver.get(FB_HOMEPAGE)
+
+    # If first-time, perform login
+    if first_time:
+        try:
+            login()  
+            print("Logged in and Chrome profile created.")
+            Logged_in = True
+        except Exception as e:
+            print(f"Error during login: {e}")
+    else:
+        print("Using existing Chrome profile.")
+        Logged_in = True
 
 
 def get_driver_path():
@@ -52,18 +112,18 @@ def page_has_loaded(driver):
     return page_state == 'complete'
 
 
-
 def human_like_typing(element, text):
     """Types text into an input field with human-like delays."""
     for char in text:
         element.send_keys(char)
         time.sleep(random.uniform(0.2, 0.4))  # Random delay per character
 
-def login(driver, email, password):
-    global Logged_in
+def login():
+    global driver,EMAIL,PASSWORD,Logged_in
+    email= EMAIL
+    password= PASSWORD
     if Logged_in:
         return
-    
     c = 0
     while c < 120:
         c += 1
@@ -99,30 +159,7 @@ def login(driver, email, password):
     time.sleep(random.uniform(3, 5))  # Allow time for login process
 
 
-def set_up_driver():
-    global driver,FB_HOMEPAGE
-    chrome_options = webdriver.ChromeOptions()
-    prefs = {
-        "profile.default_content_setting_values.notifications": 2   # block notifications
-    }
-    chrome_options.add_experimental_option("prefs", prefs)
-    chrome_options.add_argument('--disable-web-security')
-    chrome_options.add_argument('--allow-running-insecure-content')
-    chrome_options.add_argument("--disable-background-timer-throttling")
-    chrome_options.add_argument("--disable-renderer-backgrounding")
-    chrome_options.add_argument("--disable-backgrounding-occluded-windows")
-    chrome_options.add_argument("--headless=new")  # Enable headless mode in a way that mimics user behavior
-    chrome_options.add_argument("--window-size=1920,1080")  # Large window size to force rendering
-    chrome_options.add_argument("--force-device-scale-factor=1")  # Prevents scaling issues
-    chrome_options.add_argument("--disable-blink-features=AutomationControlled")  # Reduces detection
-    chrome_options.add_argument("--disable-features=NetworkService,NetworkServiceInProcess")  # Forces content loading
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    extension_directory = os.path.join(current_dir,"extension")
-    chrome_options.add_argument(f'--load-extension={extension_directory}')
-    driver_path = get_driver_path()
-    driver = webdriver.Chrome(service=Service(driver_path), options=chrome_options)
-    driver.get(FB_HOMEPAGE)
-    
+        
 
 # Function to scroll through a user profile
 def scroll_profile(profile_link):
@@ -234,14 +271,6 @@ def start_server(host='127.0.0.1', port=65431):
                     if Logged_in:
                         return
                     set_up_driver()
-                    while True:
-                        try:
-                            login(driver,EMAIL,PASSWORD)
-                            Logged_in=True
-                            break
-                        except:
-                            print("Exception in login")
-                            continue
                 else:
                     pass
                 

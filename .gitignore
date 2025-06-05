@@ -1,3 +1,4 @@
 *.pyc
 downloads/
 __pyc*
+chrome_profile/
