@@ -2,7 +2,12 @@
 Make sure to run this server on port 8090 or
 change the url path on the background.js script
 '''
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect,Query
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect,Query,Response,Cookie,Query, BackgroundTasks
+from fastapi.responses import HTMLResponse
+from concurrent.futures import ThreadPoolExecutor
+import asyncio
+import uuid
+from pathlib import Path
 import os
 import json
 import threading
@@ -29,8 +34,10 @@ from image_analysis import download_and_process_image
 
 from __init__ import set_dir
 
+
 set_dir()
 
+executor = ThreadPoolExecutor(max_workers=20)
 Result=dict()
 Verify =False       #Was used to validate results, not used for now
 User_name="none"
@@ -71,13 +78,14 @@ app.add_middleware(
 
 # Store active WebSocket connections
 connections = set()
-url_to_socket_map = {}
+uid_to_socket_map = {}
+url_to_uid_map = {}
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     """ WebSocket endpoint for real-time communication with frontend """
     await websocket.accept()
-    global Result, User_name, url_to_socket_map
+    global Result, User_name, uid_to_socket_map
     try:
         while True:
             data = await websocket.receive_text()
@@ -91,11 +99,16 @@ async def websocket_endpoint(websocket: WebSocket):
                 Result.clear()
                 link = msg_data  # Profile URL
                 print("New Profile: ", link)
+                session_id= message.get("session_id", None)  # Get session ID or create a new one
                 # Store WebSocket connection associated with the profile URL
-                url_to_socket_map[link] = websocket  
+                url_to_uid_map[link] = session_id
                 reset_personality_aggregation()  # Reset aggregation for a new session
-                send_data(msg_type="PROFILE", msg_data=link)
-
+                send_data(msg_type="PROFILE", msg_data=link)  # Send profile link to the server
+            if msg_type == "session_id":
+                session_id = msg_data
+                print("Session ID received via WS message:", session_id)
+                uid_to_socket_map[session_id] = websocket  # Map session ID to WebSocket
+                
             elif msg_type == 'Stop_analysis':
                 Result.clear()
                 reset_personality_aggregation()
@@ -104,16 +117,25 @@ async def websocket_endpoint(websocket: WebSocket):
 
     except WebSocketDisconnect:
         # Remove the disconnected WebSocket from the mapping
-        for url, ws in list(url_to_socket_map.items()):
+        for url, ws in list(uid_to_socket_map.items()):
             if ws == websocket:
-                del url_to_socket_map[url]
+                del uid_to_socket_map[url]
                 break
         print("WebSocket Disconnected")
-
+        
 @app.get("/")
-async def serve_main():
-    return FileResponse("public/html/main.html")
-
+async def serve_main(session_id: str = Cookie(default=None)):
+    main_file_path = os.path.join(os.path.dirname(__file__), 'public', 'html', 'main.html')
+    response = FileResponse(main_file_path, media_type="text/html")
+    
+    if session_id is None:
+        new_session_id = str(uuid.uuid4())
+        response.set_cookie(key="session_id", value=new_session_id, httponly=False, samesite="lax")
+        print(f"New session ID set: {new_session_id}")
+    else:
+        print(f"Existing session ID: {session_id}")
+    
+    return response
 
 @app.post("/send_name")
 async def get_user_name(body: Name):
@@ -122,13 +144,14 @@ async def get_user_name(body: Name):
     """
     global User_name
     name = body.name
+    session_id = url_to_uid_map.get(body.url, None)  # Get session ID from URL mapping
     #name = " ".join(name.split(" ")[:2])
     url = body.url
     print("User:", name, "Url:", url)
     User_name=name
     dp_url=body.dp
     # Check if a WebSocket connection exists for this URL
-    websocket = url_to_socket_map.get(url)
+    websocket = uid_to_socket_map.get(session_id)
     if websocket:
         try:
             await websocket.send_text(json.dumps({"type": "user_name", "name":User_name,"dp":dp_url}))
@@ -137,23 +160,14 @@ async def get_user_name(body: Name):
 
     return {"success": True}
 
+def analyze_and_process(body: dict):
+    global Verify, vectorizer, Result
 
-@app.post("/api")
-async def analyze_personality(body: Input):
-    """
-    Analyzes personality traits based on text and image inputs, updates the aggregation,
-    and prints the post details and current aggregates.
-    
-    Returns:
-        dict: Aggregated personality prediction.
-    """
-    global Verify,vectorizer,Result
-    body = body.dict()
     url = body.get("url", "NONE")
-    post_text = body["text"]  # Text content received
-    img_links = body.get("imgs", [])  # Image URLs received
+    post_text = body["text"]
+    img_links = body.get("imgs", [])
+    session_id = url_to_uid_map.get(url, None)
 
-    # Process images: extract OCR text and expression label if any.
     whole_image_text = ""
     expressions = []
     for img_url in img_links:
@@ -166,7 +180,6 @@ async def analyze_personality(body: Input):
 
     combined_text = whole_image_text + post_text
 
-    # Print out the details of this post
     print("----- New Post Received -----")
     print("Post Text:")
     print(post_text[:100])
@@ -177,50 +190,62 @@ async def analyze_personality(body: Input):
         print("Detected Expression(s):")
         for expr in expressions:
             print(expr)
-    
-    # # Get and print the cognitive score
+
     cognitive_score = get_cognitive_score()
     print(f"Current Cognitive Score: {cognitive_score:.2f}")
 
-    # Update global personality aggregation with the combined text
-    current_personality=update_personality_aggregation(combined_text,url, models, vectorizer)
+    current_personality = update_personality_aggregation(combined_text, url, models, vectorizer)
     overall_result = get_aggregated_personality()
-    
-    #print("Aggregated MBTI Prediction:", overall_result)
-    print("Current MBTI Prediction:",current_personality)
-    # Print individual trait aggregates
-    aggregates = get_aggregated_details()
-    print("Current Aggregation Details:")
 
+    aggregates = get_aggregated_details()
+    print("Current MBTI Prediction:", current_personality)
+    print("Current Aggregation Details:")
     for dichotomy, data in aggregates.items():
-            print(f" {dichotomy}:")
-            for letter, stats in data.items():
-                if isinstance(stats, dict):
-                    avg = stats['conf_sum'] / stats['count'] if stats['count'] > 0 else 0.0
-                    print(f"   {letter}: count = {stats['count']}, average confidence = {avg:.2f}")
-            print("-" * 50)
-    #update_frame(url, overall_result)  # Gives output in native window, no longer used
+        print(f" {dichotomy}:")
+        for letter, stats in data.items():
+            if isinstance(stats, dict):
+                avg = stats['conf_sum'] / stats['count'] if stats['count'] > 0 else 0.0
+                print(f"   {letter}: count = {stats['count']}, average confidence = {avg:.2f}")
+        print("-" * 50)
+
     if current_personality in Result:
-        Result[current_personality]+=1
+        Result[current_personality] += 1
     else:
-        Result[current_personality]=1
-    websocket = url_to_socket_map.get(url)
+        Result[current_personality] = 1
+
+    websocket = uid_to_socket_map.get(session_id)
     if websocket:
         try:
-            await websocket.send_text(json.dumps({"type": "update",'url':url,'cog_score':f'{cognitive_score:.2f}',"result":Result,"aggregate":aggregates}))
+            asyncio.run(websocket.send_text(json.dumps({
+                "type": "update",
+                "url": url,
+                "cog_score": f"{cognitive_score:.2f}",
+                "result": Result,
+                "aggregate": aggregates
+            })))
         except Exception as e:
             print(f"Error sending WebSocket message: {e}")
+
+    return current_personality
+
+@app.post("/api")
+async def analyze_personality(body: Input):
+    loop = asyncio.get_event_loop()
+    current_personality = await loop.run_in_executor(executor, analyze_and_process, body.dict())
     return {"data": current_personality}
 
 
-
 @app.get('/job_result')
-def get_mbti_details(mbti_type: str = Query(None, title="MBTI Personality Type"),cog_score: float = Query(None, title="Cognitive Score")):
-    result=predict_jobs(mbti_type, cog_score)
-
-    # Ensure mbti_type is provided and exists in data
+async def get_mbti_details(
+    mbti_type: str = Query(None, title="MBTI Personality Type"),
+    cog_score: float = Query(None, title="Cognitive Score")
+):
     if not mbti_type:
         return {"error": "Missing mbti_type parameter"}
+
+    # Run predict_jobs in a separate thread without blocking the FastAPI worker
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(executor, predict_jobs, mbti_type, cog_score)
 
     return {"personality": mbti_type.upper(), **result}
 

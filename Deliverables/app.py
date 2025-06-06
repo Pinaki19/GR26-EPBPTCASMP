@@ -61,7 +61,6 @@ def setup_chrome_with_extension():
     extension_directory = os.path.abspath(os.path.join(current_dir, "extension"))
     print(f"Loading extension from: {extension_directory}")
     chrome_options.add_argument(f'--load-extension={extension_directory}')
-
     # Persistent Chrome profile
     user_data_dir = os.path.abspath("chrome_profile")
     chrome_options.add_argument(f'--user-data-dir={user_data_dir}')
@@ -200,17 +199,17 @@ def scroll_profile(profile_link):
         driver.execute_script("document.body.style.zoom='1.01'")  # Small zoom to force re-render
         driver.execute_script("document.body.style.zoom='1.0'")  # Reset
         height=min(height+400,last_height)
-        # Wait to load page
-        time.sleep(SCROLL_PAUSE_TIME)
 
+        time.sleep(SCROLL_PAUSE_TIME)
         # Calculate new scroll height and compare with last scroll height
-        new_height = driver.execute_script("return document.body.scrollHeight")
-        if( new_height == last_height):
-            same_height_count += 1
-            if same_height_count >= 7:
-                print("No more new content found, stopping scroll.")
+        last_height = driver.execute_script("return document.body.scrollHeight")
+        if(height==last_height):
+            same_height_count+=1
+            if same_height_count>5:
+                print("Reached end of profile or no new content loaded.")
                 break
-        last_height = new_height
+        else:
+            same_height_count=0
     driver.close()
     driver.switch_to.window(driver.window_handles[0]) 
 
