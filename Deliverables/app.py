@@ -20,8 +20,8 @@ from webdriver_manager.microsoft import EdgeChromiumDriverManager
 
 # File to store the path of the driver (so it only installs once)
 driver_path_file = 'driver_path.pkl'
-EMAIL="8334999569"
-PASSWORD="myfbaccount2024"
+EMAIL="atryeedhar23@gmail.com"
+PASSWORD="hello25"
 
 STOP=False
 driver=None
