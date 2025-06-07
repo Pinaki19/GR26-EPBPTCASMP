@@ -104,7 +104,7 @@ def update_user_data(url: str, cognitive_score: str):
     Update user data for a specific URL with cognitive score.
     This function is called when the cognitive score is updated.
     """
-    if subscription_exixts(url):
+    if not subscription_exixts(url):
         return
     global url_to_data_map
     if url in url_to_data_map:
@@ -383,7 +383,7 @@ def analyze_and_process(body: dict):
 
     cognitive_score = get_cognitive_score(url)
     print(f"Current Cognitive Score: {cognitive_score:.2f}")
-
+    update_user_data(url, f"{cognitive_score:.2f}")  # Update cognitive score in user data
     current_personality = update_personality_aggregation(combined_text, url, models, vectorizer)
     overall_result = get_aggregated_personality(url)
     print("Overall Personality Result:", overall_result)
@@ -404,7 +404,7 @@ def analyze_and_process(body: dict):
         Result[current_personality] = 1
 
     set_result(url, Result)
-    update_user_data(url, f"{cognitive_score:.2f}")  # Update cognitive score in user data
+   
     for session_id in session_ids:
         websocket = uid_to_socket_map.get(session_id,None)
         if websocket:
