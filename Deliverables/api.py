@@ -2,7 +2,7 @@
 Make sure to run this server on port 8090 or
 change the url path on the background.js script
 '''
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect,Query,Response,Cookie,Query, BackgroundTasks
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect,Query,Response,Cookie,Query, BackgroundTasks,Request
 from fastapi.responses import HTMLResponse
 from concurrent.futures import ThreadPoolExecutor
 import asyncio
@@ -293,45 +293,22 @@ async def serve_main(session_id: str = Cookie(default=None)):
         unsubscribe_from_url(session_id)  # Unsubscribe from all URLs for this session ID
     return response
 
-@app.post('/analyze_profiles')
-async def analyze_profiles(profiles: Profiles,session_id: str = Cookie(default=None)):
-    """
-    Analyzes a list of profiles and returns the results.
-    This endpoint is called when the user submits a list of profile URLs.
-    """
-    urls = profiles.url
-    if not urls:
-        return {"error": "No URLs provided for analysis."}
-    
-    if len(urls)>4:
-        return {"error": "Too many URLs provided. Please limit to 4 URLs."}
-    if len(urls)==1:
-        url = urls[0]
-        return RedirectResponse(url=f"/analyze_individual?url={url}")
-    else:
-        return RedirectResponse(url="/analyze_candidates")
-    
+
 @app.get("/analyze_candidates")
 async def analyze_candidates(
-    count: int = Query(..., title="Number of URLs"),
-    session_id: str = Cookie(default=None),
-    **kwargs
+    request: Request,
+    count: int = Query(..., title="Number of URLs")
 ):
     """
     Serves the candidate analysis page and provides the list of URLs as query parameters.
     """
-    # Extract all url{index} parameters
+    # Extract all url{index} parameters from the query string
     urls = []
     for i in range(count):
         url_key = f"url{i}"
-        if url_key in kwargs:
-            urls.append(kwargs[url_key])
-        else:
-            # Try to get from query params directly (for FastAPI)
-            url_val = kwargs.get(url_key) or None
-            if url_val:
-                urls.append(url_val)
-    # You can now use the `urls` list as needed, e.g., pass to template or log
+        url_val = request.query_params.get(url_key)
+        if url_val:
+            urls.append(url_val)
     print("Analyzing candidates for URLs:", urls)
     file_path = os.path.join(os.path.dirname(__file__), 'public', 'html', 'results.html')
     response = FileResponse(file_path, media_type="text/html")

@@ -291,6 +291,7 @@
     // Initialize everything when DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {
       // Initialize Lucide icons
+      lucide.createIcons();
       if (window.lucide) {
         window.lucide.replace();
       }
@@ -320,7 +321,7 @@
       input.type = 'url';
       input.name = `url${index}`;
       input.id = `url${index}`;
-      input.placeholder = 'Enter URL (e.g., https://example.com)';
+      input.placeholder = 'Enter URL (e.g., https://www.facebook.com/xyz)';
       input.required = true;
       return input;
     }
@@ -339,6 +340,36 @@
         modalDesc.textContent = 'Provide URLs of candidates\' social media or text content to assess traits.';
         addUrlInput(); // start with one input
         addUrlBtn.style.display = 'inline'; // show the add more URLs button
+
+        // Modify addUrlInput to include a delete icon for candidate mode
+        const originalAddUrlInput = addUrlInput;
+        addUrlInput = function() {
+          const count = urlInputsContainer.children.length;
+          const wrapper = document.createElement('div');
+          wrapper.className = "flex items-center gap-2 mb-2";
+          const input = createUrlInput(count + 1);
+          wrapper.appendChild(input);
+
+          if (currentMode === 'candidate') {
+            const delBtn = document.createElement('button');
+            delBtn.type = 'button';
+            delBtn.className = 'delete-url-btn text-gray-400 hover:text-red-500 p-1';
+            delBtn.setAttribute('aria-label', 'Delete URL');
+            delBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="lucide lucide-x w-5 h-5" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
+            // Add click event to delete the input row
+            delBtn.addEventListener('click', function(e) {
+              e.preventDefault();
+              wrapper.remove();
+            });
+            wrapper.appendChild(delBtn);
+          }
+          urlInputsContainer.appendChild(wrapper);
+
+          // Refresh Lucide icons
+          if (window.lucide) {
+            window.lucide.replace();
+          }
+        };
       }
       showModal();
     }
@@ -408,15 +439,14 @@
         }, 800)
       } else if (currentMode === 'candidate') {
         console.log('Candidate Assessment Mode');
-        // Pass URLs to the results page via URL parameters
-        const urlParams = new URLSearchParams();
-        urlParams.set('count', urls.length);
+        // Pass URLs to the results page via URL parameters (do not encode)
+        let paramStr = `count=${urls.length}`;
         urls.forEach((url, index) => {
-          urlParams.set(`url${index}`, url);
+          paramStr += `&url${index}=${url}`;
         });
-        
+
         // Redirect to results page with URL data
-        window.location.href = `/analyze_candidates?${urlParams.toString()}`;
+        window.location.href = `/analyze_candidates?${paramStr}`;
       }
       // TODO: Implement your actual analysis logic here
 
