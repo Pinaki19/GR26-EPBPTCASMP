@@ -351,7 +351,7 @@ def get_cognitive_score(url):
 # -----------------------------------------------------------------------------
 # For testing purposes: load models and perform a test aggregation.
 # For testing purposes: load models and perform a test aggregation.
-if __name__ == "_main_":
+if _name_ == "_main_":
     try:
         models, vectorizer = load_models()
         # A diverse list of posts representing different personality aspects:
