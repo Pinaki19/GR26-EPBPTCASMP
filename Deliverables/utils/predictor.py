@@ -152,7 +152,7 @@ def load_models():
     """
     Load trained models and vectorizer from disk.
     """
-    current_dir = os.path.dirname(os.path.dirname(os.path.abspath(_file_)))
+    current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     print("Cur ", current_dir)
     with open(os.path.join(current_dir, models_path), 'rb') as f:
         models = pickle.load(f)
@@ -351,7 +351,7 @@ def get_cognitive_score(url):
 # -----------------------------------------------------------------------------
 # For testing purposes: load models and perform a test aggregation.
 # For testing purposes: load models and perform a test aggregation.
-if _name_ == "_main_":
+if __name__ == "__main__":
     try:
         models, vectorizer = load_models()
         # A diverse list of posts representing different personality aspects:
