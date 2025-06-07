@@ -311,6 +311,32 @@ async def analyze_profiles(profiles: Profiles,session_id: str = Cookie(default=N
     else:
         return RedirectResponse(url="/analyze_candidates")
     
+@app.get("/analyze_candidates")
+async def analyze_candidates(
+    count: int = Query(..., title="Number of URLs"),
+    session_id: str = Cookie(default=None),
+    **kwargs
+):
+    """
+    Serves the candidate analysis page and provides the list of URLs as query parameters.
+    """
+    # Extract all url{index} parameters
+    urls = []
+    for i in range(count):
+        url_key = f"url{i}"
+        if url_key in kwargs:
+            urls.append(kwargs[url_key])
+        else:
+            # Try to get from query params directly (for FastAPI)
+            url_val = kwargs.get(url_key) or None
+            if url_val:
+                urls.append(url_val)
+    # You can now use the `urls` list as needed, e.g., pass to template or log
+    print("Analyzing candidates for URLs:", urls)
+    file_path = os.path.join(os.path.dirname(__file__), 'public', 'html', 'results.html')
+    response = FileResponse(file_path, media_type="text/html")
+    return response
+    
 @app.get("/analyze_individual")
 async def analyze_individual(url: str = Query(..., title="Profile URL"),session_id: str = Cookie(default=None)):
     """

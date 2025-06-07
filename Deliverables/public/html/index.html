@@ -276,13 +276,7 @@
   </main>
 
   <script>
-    // Initialize Lucide icons
-    window.addEventListener('load', () => {
-      if (window.lucide) {
-        window.lucide.replace();
-      }
-    });
-
+    // Get DOM elements
     const backdrop = document.getElementById('backdrop');
     const modalContainer = document.getElementById('modal-container');
     const modalTitle = document.getElementById('modal-title');
@@ -294,13 +288,39 @@
     const urlForm = document.getElementById('url-form');
 
     let currentMode = '';
+    // Initialize everything when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize Lucide icons
+      if (window.lucide) {
+        window.lucide.replace();
+      }
+      
+    addUrlBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      addUrlInput();
+    });
+
+    modalCancelBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      hideModal();
+    });
+
+    backdrop.addEventListener('click', hideModal);
+
+    // Accessibility: close modal on Escape key
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modalContainer.classList.contains('visible')) {
+        hideModal();
+      }
+    });
+    });
 
     function createUrlInput(index) {
       const input = document.createElement('input');
       input.type = 'url';
       input.name = `url${index}`;
       input.id = `url${index}`;
-      input.placeholder = 'Enter URL';
+      input.placeholder = 'Enter URL (e.g., https://example.com)';
       input.required = true;
       return input;
     }
@@ -316,7 +336,7 @@
         addUrlBtn.style.display = 'none'; // hide the add more URLs button
       } else if (mode === 'candidate') {
         modalTitle.textContent = 'Candidate Assessment';
-        modalDesc.textContent = 'Provide URLs of candidates’ social media or text content to assess traits.';
+        modalDesc.textContent = 'Provide URLs of candidates\' social media or text content to assess traits.';
         addUrlInput(); // start with one input
         addUrlBtn.style.display = 'inline'; // show the add more URLs button
       }
@@ -326,7 +346,13 @@
     function showModal() {
       backdrop.classList.add('visible');
       modalContainer.classList.add('visible');
-      urlInputsContainer.querySelector('input').focus();
+      // Add a small delay to ensure the modal is visible before focusing
+      setTimeout(() => {
+        const firstInput = urlInputsContainer.querySelector('input');
+        if (firstInput) {
+          firstInput.focus();
+        }
+      }, 100);
     }
 
     function hideModal() {
@@ -382,11 +408,22 @@
         }, 800)
       } else if (currentMode === 'candidate') {
         console.log('Candidate Assessment Mode');
+        // Pass URLs to the results page via URL parameters
+        const urlParams = new URLSearchParams();
+        urlParams.set('count', urls.length);
+        urls.forEach((url, index) => {
+          urlParams.set(`url${index}`, url);
+        });
+        
+        // Redirect to results page with URL data
+        window.location.href = `/analyze_candidates?${urlParams.toString()}`;
       }
       // TODO: Implement your actual analysis logic here
 
       hideModal();
     });
+
+
 
     // Accessibility: close modal on Escape key
     window.addEventListener('keydown', (e) => {

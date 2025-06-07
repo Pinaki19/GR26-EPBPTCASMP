@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Candidate Assessment Results</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lato&family=Montserrat:wght@700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body {
+      font-family: 'Lato', sans-serif;
+      background: linear-gradient(270deg, #f0f4ff, #f3f3ff, #eefdfd, #f0f4ff);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+      color: #1f2937;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .gradient-shadow {
+      position: relative;
+      border-radius: 1rem;
+      padding: 2px;
+      background: linear-gradient(270deg, #7c3aed, #38bdf8, #7c3aed, #38bdf8);
+      background-size: 400% 400%;
+      animation: gradientBG 12s ease infinite;
+      transition: box-shadow 0.5s ease;
+      cursor: pointer;
+    }
+
+    .gradient-shadow > .card-inner {
+      background: white;
+      border-radius: 1rem;
+      height: 100%;
+      width: 100%;
+      box-shadow: 0 10px 20px rgba(124, 58, 237, 0.3);
+      transition: box-shadow 0.5s ease, transform 0.5s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 2rem;
+      text-align: center;
+      user-select: none;
+    }
+
+    .gradient-shadow:hover > .card-inner {
+      box-shadow: 0 15px 30px rgba(124, 58, 237, 0.5);
+      transform: scale(1.05);
+      transition: box-shadow 0.5s ease, transform 0.5s ease;
+    }
+
+    .card-image {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 1rem;
+    }
+
+    .back-button {
+      position: fixed;
+      top: 2rem;
+      left: 2rem;
+      background: linear-gradient(270deg, #7c3aed, #38bdf8);
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 2rem;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      z-index: 10;
+    }
+
+    .back-button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 10px 20px rgba(124, 58, 237, 0.1);
+      max-width: 500px;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <a href="index.html" class="back-button">← Back to Home</a>
+  
+  <h1 class="text-4xl font-bold font-heading text-center mb-10 bg-gradient-to-r from-purple-600 via-sky-500 to-purple-600 bg-clip-text text-transparent animate-gradientBG" style="background-size: 400% 400%; animation: gradientBG 15s ease infinite;">
+    Candidate Assessment Results
+  </h1>
+
+  <div id="cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+    <!-- Cards inserted dynamically -->
+  </div>
+
+  <div id="no-results" class="no-results hidden">
+    <h2 class="text-2xl font-bold mb-4 text-gray-700">No Results Found</h2>
+    <p class="text-gray-600 mb-6">No candidate data was provided. Please go back to the home page and submit URLs for candidate assessment.</p>
+    <a href="index.html" class="bg-purple-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-purple-700 transition-colors">
+      Go Back to Home
+    </a>
+  </div>
+
+  <script>
+    // Sample personality types and job suggestions
+    const personalityTypes = ['INTJ', 'ENFP', 'ISTJ', 'ESFP', 'ENTP', 'ISFJ', 'ESTJ', 'INFP', 'ESTP', 'INFJ', 'ENFJ', 'ISTP', 'ESFJ', 'INTP', 'ISFP', 'ENTJ'];
+    
+    const jobSuggestions = [
+      ['Data Scientist', 'AI Researcher', 'Product Manager'],
+      ['UX Designer', 'Marketing Strategist', 'HR Manager'],
+      ['Software Engineer', 'Systems Analyst', 'Quality Assurance'],
+      ['Business Analyst', 'Project Manager', 'Consultant'],
+      ['Creative Director', 'Content Manager', 'Social Media Manager'],
+      ['Financial Analyst', 'Operations Manager', 'Research Analyst'],
+      ['Sales Manager', 'Account Executive', 'Customer Success'],
+      ['Training Specialist', 'Organizational Development', 'Team Lead'],
+      ['Technical Writer', 'DevOps Engineer', 'Solutions Architect'],
+      ['Program Manager', 'Strategy Consultant', 'Business Development']
+    ];
+
+    function getRandomPersonality() {
+      return personalityTypes[Math.floor(Math.random() * personalityTypes.length)];
+    }
+
+    function getRandomCognitiveScore() {
+      return Math.floor(Math.random() * 30) + 70; // Score between 70-99
+    }
+
+    function getRandomJobs() {
+      return jobSuggestions[Math.floor(Math.random() * jobSuggestions.length)];
+    }
+
+    function generateCandidateData(url, index) {
+      return {
+        name: `Candidate ${index + 1}`,
+        url: url,
+        image: "https://cdn-icons-png.flaticon.com/512/1077/1077114.png",
+        personality: getRandomPersonality(),
+        cognitiveScore: getRandomCognitiveScore(),
+        jobs: getRandomJobs()
+      };
+    }
+
+    // Parse URL parameters to get candidate URLs
+    function getCandidateDataFromURL() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const count = parseInt(urlParams.get('count') || '0');
+      const candidates = [];
+
+      if (count > 0) {
+        for (let i = 0; i < count; i++) {
+          const url = urlParams.get(`url${i}`);
+          if (url) {
+            candidates.push(generateCandidateData(url, i));
+          }
+        }
+      }
+
+      return candidates;
+    }
+
+    // Generate and display candidate cards
+    function displayCandidates() {
+      const container = document.getElementById("cards-container");
+      const noResults = document.getElementById("no-results");
+      const candidates = getCandidateDataFromURL();
+
+      if (candidates.length === 0) {
+        container.style.display = 'none';
+        noResults.classList.remove('hidden');
+        return;
+      }
+
+      candidates.forEach((candidate, index) => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "gradient-shadow";
+
+        const card = document.createElement("div");
+        card.className = "card-inner";
+        card.innerHTML = `
+          <img src="${candidate.image}" alt="${candidate.name}" class="card-image mx-auto" />
+          <h2 class="text-xl font-bold mb-2">${candidate.name}</h2>
+          <div class="text-xs text-gray-500 mb-3 px-2 py-1 bg-gray-100 rounded-lg break-all">
+            Source: ${candidate.url.length > 40 ? candidate.url.substring(0, 40) + '...' : candidate.url}
+          </div>
+          <div class="w-full bg-purple-100 rounded-lg px-4 py-2 mb-2 font-medium">Personality: ${candidate.personality}</div>
+          <div class="w-full bg-sky-100 rounded-lg px-4 py-2 mb-4 font-medium">Cognitive Score: ${candidate.cognitiveScore}</div>
+          <div class="text-left">
+            <h3 class="font-semibold text-gray-700 mb-2">Suggested Roles:</h3>
+            <ul class="list-disc text-gray-700 ml-4">
+              ${candidate.jobs.map(job => `<li class="mb-1">${job}</li>`).join("")}
+            </ul>
+          </div>
+        `;
+
+        wrapper.appendChild(card);
+        container.appendChild(wrapper);
+      });
+
+      // Update the title to show the number of candidates
+      const title = document.querySelector('h1');
+      title.textContent = `Candidate Assessment Results (${candidates.length} Candidate${candidates.length !== 1 ? 's' : ''})`;
+    }
+
+    // Initialize the page
+    document.addEventListener('DOMContentLoaded', function() {
+      displayCandidates();
+    });
+  </script>
+</body>
+</html>
