@@ -38,9 +38,9 @@ from __init__ import set_dir
 set_dir()
 
 executor = ThreadPoolExecutor(max_workers=20)
-Result=dict()
+url_to_result_map = {}  # Maps URLs to results
 Verify =False       #Was used to validate results, not used for now
-User_name="none"
+url_to_data_map = {}  # Maps URLs to user_name and dp_url and aggregate_details
 
 class Input(BaseModel): #User's post
     url: str
@@ -81,11 +81,161 @@ connections = set()
 uid_to_socket_map = {}
 url_to_uid_map = {}
 
+def set_user_data(url: str, user_name: str, dp_url: str):
+    """
+    Set user data for a specific URL.
+    This function is called when the user name and profile picture URL are received.
+    """
+    global url_to_data_map
+    if url not in url_to_data_map:
+        url_to_data_map[url] = {"user_name": user_name, "dp_url": dp_url,"cognitive_score": "0.00"}
+        
+def get_user_data(url: str):
+    """
+    Get user data for a specific URL.
+    Returns a dictionary with user_name and dp_url.
+    """
+    global url_to_data_map
+    return url_to_data_map.get(url, {"user_name": "", "dp_url": ""})
+
+def update_user_data(url: str, cognitive_score: str):
+    """
+    Update user data for a specific URL with cognitive score.
+    This function is called when the cognitive score is updated.
+    """
+    global url_to_data_map
+    if url in url_to_data_map:
+        url_to_data_map[url]["cognitive_score"] = cognitive_score
+    else:
+        url_to_data_map[url] = {"user_name": "", "dp_url": "", "cognitive_score": cognitive_score}
+
+def reset_user_data(url: str):
+    """
+    Reset user data for a specific URL.
+    This function is called when the analysis is stopped.
+    """
+    global url_to_data_map
+    if url in url_to_data_map:
+        del url_to_data_map[url]
+
+def data_exists(url: str):
+    """
+    Check if user data exists for a specific URL.
+    Returns True if user data exists, otherwise False.
+    """
+    global url_to_data_map
+    return url in url_to_data_map and bool(url_to_data_map[url])
+
+def subscription_exixts(url):
+    """
+    Check if a URL is already subscribed to by any session.
+    """
+    global url_to_uid_map
+    return url in url_to_uid_map and bool(url_to_uid_map[url])
+
+async def subscribe_to_url(url: str, session_id: str):
+    """
+    Subscribe to a URL with a session ID.
+    This function is called when a new profile is received.
+    """
+    if url not in url_to_uid_map:
+        url_to_uid_map[url] = [session_id]
+    else:
+        if session_id not in url_to_uid_map[url]:
+            url_to_uid_map[url].append(session_id)
+    if data_exists(url):
+        user_data = get_user_data(url)
+        if session_id in uid_to_socket_map:
+            websocket = uid_to_socket_map.get(session_id,None)
+        if websocket:
+            try:
+                await websocket.send_text(json.dumps({"type": "user_name", "name":user_data.get("user_name"),"dp":user_data.get("dp_url")}))
+                if result_exists(url):
+                    result = get_result(url)
+                    aggregates = get_aggregated_details(url)
+                    cognitive_score = user_data.get("cognitive_score", "0.00")
+                    await websocket.send_text(json.dumps({
+                        "type": "update",
+                        "url": url,
+                        "cog_score": cognitive_score,
+                        "result": result,
+                        "aggregate": aggregates
+                    }))
+            except Exception as e:
+                print(f"Error sending WebSocket message: {e}")      
+        
+def unsubscribe_from_url(session_id: str,url=None) -> bool:    # returns wheather all sessions are unsubscribed or not
+    """
+    Unsubscribe from a URL with a session ID.
+    This function is called when the analysis is stopped.
+    """
+    if not url:
+        # If no URL is provided, unsubscribe from all URLs for this session ID
+        for url in list(url_to_uid_map.keys()):
+            if session_id in url_to_uid_map[url]:
+                url_to_uid_map[url].remove(session_id)
+                if not url_to_uid_map[url]:  # Remove URL if no sessions are left
+                    del url_to_uid_map[url]
+                    clear_result(url)
+                    reset_user_data(url)  # Reset user data for this URL
+            return False
+    else:
+        if url in url_to_uid_map and session_id in url_to_uid_map[url]:
+            url_to_uid_map[url].remove(session_id)
+            if not url_to_uid_map[url]:  # Remove URL if no sessions are left
+                del url_to_uid_map[url]
+                clear_result(url)  # Clear results for this URL
+                reset_user_data(url)  # Reset user data for this URL
+                return True  # All sessions unsubscribed
+        else:
+            print(f"Session ID {session_id} not found for URL {url}. No action taken.")
+            
+        return False  # Not all sessions unsubscribed
+            
+def get_subscriptions(url):
+    """
+    Get all session IDs subscribed to a URL.
+    """
+    global url_to_uid_map
+    return url_to_uid_map.get(url, [])
+
+def get_result(url):
+    """
+    Get the result for a specific URL.
+    """
+    global url_to_result_map
+    return url_to_result_map.get(url, {})
+def result_exists(url):
+    """
+    Check if results exist for a specific URL.
+    Returns True if results exist, otherwise False.
+    """
+    global url_to_result_map
+    return url in url_to_result_map and bool(url_to_result_map[url])
+
+def set_result(url, result):
+    """
+    Set the result for a specific URL.
+    """
+    global url_to_result_map
+    if url not in url_to_result_map:
+        url_to_result_map[url] = {}
+    url_to_result_map[url].update(result)
+
+def clear_result(url):
+    """
+    Clear the result for a specific URL.
+    """
+    global url_to_result_map
+    if url in url_to_result_map:
+        del url_to_result_map[url]
+        
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     """ WebSocket endpoint for real-time communication with frontend """
     await websocket.accept()
-    global Result, User_name, uid_to_socket_map
+    global url_to_result_map, uid_to_socket_map
     try:
         while True:
             data = await websocket.receive_text()
@@ -93,34 +243,30 @@ async def websocket_endpoint(websocket: WebSocket):
 
             msg_type = message.get("type")
             msg_data = message.get("data")
-
             if msg_type == 'Profile':
-                User_name = "none"
-                Result.clear()
                 link = msg_data  # Profile URL
                 print("New Profile: ", link)
                 session_id= message.get("session_id", None)  # Get session ID or create a new one
-                # Store WebSocket connection associated with the profile URL
-                url_to_uid_map[link] = session_id
-                reset_personality_aggregation()  # Reset aggregation for a new session
-                send_data(msg_type="PROFILE", msg_data=link)  # Send profile link to the server
+                if not subscription_exixts(link):
+                    send_data(msg_type="PROFILE", msg_data=link)  # Send profile link to the server
+                await subscribe_to_url(link, session_id)
             if msg_type == "session_id":
                 session_id = msg_data
-                print("Session ID received via WS message:", session_id)
                 uid_to_socket_map[session_id] = websocket  # Map session ID to WebSocket
                 
             elif msg_type == 'Stop_analysis':
-                Result.clear()
-                reset_personality_aggregation()
-                User_name = "none"
-                send_data(msg_type='STOP SCROLL')
+                if unsubscribe_from_url( message.get("session_id", None),msg_data):
+                    reset_personality_aggregation(msg_data)
+                    send_data(msg_type='STOP SCROLL',msg_data=msg_data)
 
     except WebSocketDisconnect:
         # Remove the disconnected WebSocket from the mapping
-        for url, ws in list(uid_to_socket_map.items()):
+        for uid, ws in list(uid_to_socket_map.items()):
             if ws == websocket:
-                del uid_to_socket_map[url]
+                unsubscribe_from_url(uid)  # Unsubscribe from all URLs for this session ID
+                del uid_to_socket_map[uid]
                 break
+            
         print("WebSocket Disconnected")
         
 @app.get("/")
@@ -142,32 +288,33 @@ async def get_user_name(body: Name):
     """
     Receives and processes the user's name.
     """
-    global User_name
     name = body.name
-    session_id = url_to_uid_map.get(body.url, None)  # Get session ID from URL mapping
+    session_ids = get_subscriptions(body.url)
     #name = " ".join(name.split(" ")[:2])
     url = body.url
     print("User:", name, "Url:", url)
-    User_name=name
     dp_url=body.dp
-    # Check if a WebSocket connection exists for this URL
-    websocket = uid_to_socket_map.get(session_id)
-    if websocket:
-        try:
-            await websocket.send_text(json.dumps({"type": "user_name", "name":User_name,"dp":dp_url}))
-        except Exception as e:
-            print(f"Error sending WebSocket message: {e}")
+    set_user_data(url, name, dp_url)  # Store user data for the URL
+    # Check if any WebSocket connection exists for this URL
+    for session_id in session_ids:
+        websocket = uid_to_socket_map.get(session_id,None)
+        if websocket:
+            try:
+                await websocket.send_text(json.dumps({"type": "user_name", "name":name,"dp":dp_url}))
+            except Exception as e:
+                print(f"Error sending WebSocket message: {e}")
 
     return {"success": True}
 
 def analyze_and_process(body: dict):
-    global Verify, vectorizer, Result
-
+    global Verify, vectorizer, url_to_result_map
+    
     url = body.get("url", "NONE")
     post_text = body["text"]
     img_links = body.get("imgs", [])
-    session_id = url_to_uid_map.get(url, None)
-
+    session_ids = get_subscriptions(url)
+    Result=get_result(url)
+    
     whole_image_text = ""
     expressions = []
     for img_url in img_links:
@@ -191,13 +338,13 @@ def analyze_and_process(body: dict):
         for expr in expressions:
             print(expr)
 
-    cognitive_score = get_cognitive_score()
+    cognitive_score = get_cognitive_score(url)
     print(f"Current Cognitive Score: {cognitive_score:.2f}")
 
     current_personality = update_personality_aggregation(combined_text, url, models, vectorizer)
-    overall_result = get_aggregated_personality()
-
-    aggregates = get_aggregated_details()
+    overall_result = get_aggregated_personality(url)
+    print("Overall Personality Result:", overall_result)
+    aggregates = get_aggregated_details(url)
     print("Current MBTI Prediction:", current_personality)
     print("Current Aggregation Details:")
     for dichotomy, data in aggregates.items():
@@ -213,18 +360,21 @@ def analyze_and_process(body: dict):
     else:
         Result[current_personality] = 1
 
-    websocket = uid_to_socket_map.get(session_id)
-    if websocket:
-        try:
-            asyncio.run(websocket.send_text(json.dumps({
-                "type": "update",
-                "url": url,
-                "cog_score": f"{cognitive_score:.2f}",
-                "result": Result,
-                "aggregate": aggregates
-            })))
-        except Exception as e:
-            print(f"Error sending WebSocket message: {e}")
+    set_result(url, Result)
+    update_user_data(url, f"{cognitive_score:.2f}")  # Update cognitive score in user data
+    for session_id in session_ids:
+        websocket = uid_to_socket_map.get(session_id,None)
+        if websocket:
+            try:
+                asyncio.run(websocket.send_text(json.dumps({
+                    "type": "update",
+                    "url": url,
+                    "cog_score": f"{cognitive_score:.2f}",
+                    "result": Result,
+                    "aggregate": aggregates
+                })))
+            except Exception as e:
+                print(f"Error sending WebSocket message: {e}")
 
     return current_personality
 
@@ -255,7 +405,6 @@ async def set_up():
     """
     Loads the models and vectorizer required for personality prediction and stores them globally.
     """
-    send_data(msg_type="LOGIN")         #Initial fb login
     global models, vectorizer
     models, vectorizer = load_models()
     if models and vectorizer:

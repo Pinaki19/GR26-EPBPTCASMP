@@ -9,10 +9,11 @@ from nltk import download
 from nltk.data import find
 from sklearn.feature_extraction.text import TfidfVectorizer
 from utils.DBN_ANN import ANN, DBN, RBM, train_ann_model, train_dbn_model
+import copy
+
 
 models_path, vectorizer_path=os.path.join('pkls','models.pkl'),os.path.join('pkls','vectorizer.pkl')
 
-url=None
 
 # Global Personality Definitions
 personality_type = ["IE", "NS", "FT", "JP"]  # Each dichotomy (e.g., IE for Introversion/Extroversion)
@@ -25,6 +26,34 @@ b_Pers_list = [
     {0: 'F', 1: 'T'},
     {0: 'J', 1: 'P'}
 ]
+
+
+personality_aggregation_original = {
+    "IE": {"I": {"count": 0, "conf_sum": 0.0}, "E": {"count": 0, "conf_sum": 0.0}, "P_sum": 0.0, "n_posts": 0},
+    "NS": {"N": {"count": 0, "conf_sum": 0.0}, "S": {"count": 0, "conf_sum": 0.0}, "P_sum": 0.0, "n_posts": 0},
+    "FT": {"F": {"count": 0, "conf_sum": 0.0}, "T": {"count": 0, "conf_sum": 0.0}, "P_sum": 0.0, "n_posts": 0},
+    "JP": {"J": {"count": 0, "conf_sum": 0.0}, "P": {"count": 0, "conf_sum": 0.0}, "P_sum": 0.0, "n_posts": 0}
+}
+
+url_to_personality_aggregation = {}
+
+def set_personality_aggregation_map(url,aggregation=None):
+    global url_to_personality_aggregation
+    if not aggregation:
+        aggregation= copy.deepcopy(personality_aggregation_original)
+    url_to_personality_aggregation[url] = aggregation
+
+def get_personality_aggregation(url):
+    global url_to_personality_aggregation
+    if url not in url_to_personality_aggregation:
+        set_personality_aggregation_map(url)
+    return url_to_personality_aggregation[url]
+
+def clear_personality_aggregation(url):
+    global url_to_personality_aggregation
+    if url in url_to_personality_aggregation:
+        del url_to_personality_aggregation[url]
+        print(f"✅ Cleared personality aggregation for {url}")
 
 def download_if_not_exists(resource, identifier):
     try:
@@ -135,12 +164,7 @@ def load_models():
 # Global aggregation for personality predictions from multiple posts.
 # We now store both the cumulative confidence and count for each trait.
 # Added P_sum and n_posts for tracking probability sums across posts
-personality_aggregation = {
-    "IE": {"I": {"count": 0, "conf_sum": 0.0}, "E": {"count": 0, "conf_sum": 0.0}, "P_sum": 0.0, "n_posts": 0},
-    "NS": {"N": {"count": 0, "conf_sum": 0.0}, "S": {"count": 0, "conf_sum": 0.0}, "P_sum": 0.0, "n_posts": 0},
-    "FT": {"F": {"count": 0, "conf_sum": 0.0}, "T": {"count": 0, "conf_sum": 0.0}, "P_sum": 0.0, "n_posts": 0},
-    "JP": {"J": {"count": 0, "conf_sum": 0.0}, "P": {"count": 0, "conf_sum": 0.0}, "P_sum": 0.0, "n_posts": 0}
-}
+
 
 def update_personality_aggregation(post_text, base_url, models, vectorizer):
     """
@@ -152,12 +176,8 @@ def update_personality_aggregation(post_text, base_url, models, vectorizer):
         models (dict): Models for each dichotomy.
         vectorizer: A fitted TF-IDF vectorizer.
     """
-    global personality_aggregation, url
-    if url and url != base_url:
-        return
-    if not url:
-        url = base_url
     predictions = predict_personality(post_text, models, vectorizer)
+    personality_aggregation= get_personality_aggregation(base_url)
     for dichotomy in personality_type:
         pred_info = predictions[dichotomy]
         binary_pred = pred_info['prediction']  # 0 or 1
@@ -172,60 +192,84 @@ def update_personality_aggregation(post_text, base_url, models, vectorizer):
         # Store raw probability for cognitive score calculation
         personality_aggregation[dichotomy]["P_sum"] += prob
         personality_aggregation[dichotomy]["n_posts"] += 1
-    
+        
+    set_personality_aggregation_map(base_url,personality_aggregation)
     return predictions['MBTI']
 
-def get_aggregated_personality():
-    """
-    Computes the overall MBTI type using the average confidence for each trait.
-    
-    For each dichotomy, the average confidence is computed as:
-        average = conf_sum / count (if count > 0, else 0)
-    The letter with the higher average is selected.
-    
-    Returns:
-        str: Overall MBTI type.
-    """
-    overall_mbti = ""
-    for dichotomy in personality_type:
-        data = personality_aggregation[dichotomy]
-        letters = list(data.keys())[:2]  # Only get I/E, N/S, etc. (not P_sum/n_posts)
-        letter1, letter2 = letters[0], letters[1]
-        count1 = data[letter1]["count"]
-        count2 = data[letter2]["count"]
-        avg1 = data[letter1]["conf_sum"] / count1 if count1 > 0 else 0.0
-        avg2 = data[letter2]["conf_sum"] / count2 if count2 > 0 else 0.0
-        if avg1 > avg2:
-            overall_mbti += letter1
-        elif avg2 > avg1:
-            overall_mbti += letter2
-        else:
-            # Tie-breaker using counts.
-            overall_mbti += letter1 if count1 >= count2 else letter2
-    return overall_mbti
+def get_aggregated_personality(url):
+    return calculate_personality(get_personality_aggregation(url))['personality']
 
-def reset_personality_aggregation():
+
+def calculate_personality(data):
+    """
+    Calculates the MBTI personality type, opposite type, and confidence scores.
+    
+    Args:
+        data (dict): Dictionary containing dichotomy data with counts and confidence sums.
+        
+    Returns:
+        dict: {
+            "personality": str,
+            "oppositePersonality": str,
+            "confidence": dict
+        }
+    """
+    personality = ""
+    opposite_personality = ""
+    confidence = {}
+
+    def get_dominant_and_opposite_type(dichotomy, type1, type2):
+        count1 = data[dichotomy][type1]["count"]
+        count2 = data[dichotomy][type2]["count"]
+        conf_sum1 = data[dichotomy][type1]["conf_sum"]
+        conf_sum2 = data[dichotomy][type2]["conf_sum"]
+
+        # Choose dominant based on confidence sum
+        if conf_sum1 >= conf_sum2:
+            dominant = type1
+            opposite = type2
+            dom_sum, dom_count = conf_sum1, count1
+            opp_sum, opp_count = conf_sum2, count2
+        else:
+            dominant = type2
+            opposite = type1
+            dom_sum, dom_count = conf_sum2, count2
+            opp_sum, opp_count = conf_sum1, count1
+
+        total_count = count1 + count2
+        dominant_conf = 50 if total_count == 0 else round((dom_sum / max(count1, count2)) * 100)
+        opposite_conf = 50 if total_count == 0 else round((opp_sum / max(count1, count2)) * 100)
+
+        return dominant, opposite, dominant_conf, opposite_conf
+
+    dichotomies = [("IE", "I", "E"), ("NS", "N", "S"), ("FT", "F", "T"), ("JP", "J", "P")]
+
+    for label, type1, type2 in dichotomies:
+        dom, opp, dom_conf, opp_conf = get_dominant_and_opposite_type(label, type1, type2)
+        personality += dom
+        opposite_personality += opp
+        confidence[f"{type1}/{type2}"] = dom_conf
+
+    return {
+        "personality": personality,
+        "oppositePersonality": opposite_personality,
+        "confidence": confidence
+    }
+
+def reset_personality_aggregation(url):
     """
     Resets the global personality aggregation to its initial state.
     """
-    global personality_aggregation, url
-    url = None
-    personality_aggregation = {
-        "IE": {"I": {"count": 0, "conf_sum": 0.0}, "E": {"count": 0, "conf_sum": 0.0}, "P_sum": 0.0, "n_posts": 0},
-        "NS": {"N": {"count": 0, "conf_sum": 0.0}, "S": {"count": 0, "conf_sum": 0.0}, "P_sum": 0.0, "n_posts": 0},
-        "FT": {"F": {"count": 0, "conf_sum": 0.0}, "T": {"count": 0, "conf_sum": 0.0}, "P_sum": 0.0, "n_posts": 0},
-        "JP": {"J": {"count": 0, "conf_sum": 0.0}, "P": {"count": 0, "conf_sum": 0.0}, "P_sum": 0.0, "n_posts": 0}
-    }
+    clear_personality_aggregation(url)
 
-def get_aggregated_details():
+
+def get_aggregated_details(url):
     """
     Returns the current global aggregation details for all personality traits.
-    
     Returns:
         dict: The personality_aggregation dictionary.
     """
-    global personality_aggregation
-    return personality_aggregation
+    return get_personality_aggregation(url)
 
 # -----------------------------------------------------------------------------
 # New functions for cognitive score calculation
@@ -270,14 +314,14 @@ def bigfive_to_cognitive(bigfive_scores):
     cognitive_score = intercept + sum(w * s for w, s in zip(weights, bigfive_scores))
     return cognitive_score
 
-def get_cognitive_score():
+def get_cognitive_score(url):
     """
     Compute cognitive score from the current personality aggregation.
     
     Returns:
         float: Cognitive score based on aggregated MBTI probabilities
     """
-    global personality_aggregation
+    personality_aggregation = get_personality_aggregation(url)  
     
     # Extract average probabilities for each dichotomy
     mbti_scores = []

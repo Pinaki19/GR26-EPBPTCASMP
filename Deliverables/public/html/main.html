@@ -213,7 +213,7 @@
         let stopped=false;
         let loading=true;
         let lastPredictedPersonality = null; // Store the last personality type to avoid duplicate API calls
-
+        let curProfileLink = null; // Store the profile link to check against updates
 
         function connectWebSocket() {
             socket = new WebSocket("ws://localhost:8090/ws");
@@ -235,8 +235,7 @@
                     stopped=false;
                 } 
                 else if (data.type === "update") {
-                    const profileLink = document.getElementById("profileLink").value;
-                    if(stopped|| profileLink!=data.url)
+                    if(stopped|| curProfileLink!=data.url)
                         return;
                     updateChart(data.result);
                     displayPersonalityResults(data.aggregate,data.cog_score);
@@ -274,9 +273,10 @@
             event.preventDefault();
             const profileLink = document.getElementById("profileLink").value;
             // Reset previous results
+            
             showLoadingAnimation();
             resetResults();
-        
+            curProfileLink = profileLink;
             document.getElementById('style1').style.backgroundColor = 'antiquewhite';
         
             if (socket && socket.readyState === WebSocket.OPEN) {
@@ -297,7 +297,6 @@
             document.getElementById("visualizerTitle").classList.add("d-none");
             document.getElementById("userName").textContent = "";
             lastPredictedPersonality = null;
-            
             let dpContainer = document.getElementById("dpContainer");
             if (dpContainer) {
                 dpContainer.remove(); // Removes the profile picture
@@ -332,7 +331,7 @@
         function stopFetchingUpdates() {
             stopped=true;
             if (socket && socket.readyState === WebSocket.OPEN) {
-                socket.send(JSON.stringify({ type: "Stop_analysis" }));
+                socket.send(JSON.stringify({ type: "Stop_analysis",data:curProfileLink,session_id:getCookie("session_id") }));
             }
     
             document.getElementById("analyzeBtn").classList.remove("d-none");
