@@ -11,9 +11,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from utils.DBN_ANN import ANN, DBN, RBM, train_ann_model, train_dbn_model
 import copy
 
-
-models_path, vectorizer_path=os.path.join('pkls','models.pkl'),os.path.join('pkls','vectorizer.pkl')
-
+models_path, vectorizer_path = os.path.join('pkls', 'models.pkl'), os.path.join('pkls', 'vectorizer.pkl')
 
 # Global Personality Definitions
 personality_type = ["IE", "NS", "FT", "JP"]  # Each dichotomy (e.g., IE for Introversion/Extroversion)
@@ -27,7 +25,7 @@ b_Pers_list = [
     {0: 'J', 1: 'P'}
 ]
 
-
+# Global aggregation structure for personality predictions
 personality_aggregation_original = {
     "IE": {"I": {"count": 0, "conf_sum": 0.0}, "E": {"count": 0, "conf_sum": 0.0}, "P_sum": 0.0, "n_posts": 0},
     "NS": {"N": {"count": 0, "conf_sum": 0.0}, "S": {"count": 0, "conf_sum": 0.0}, "P_sum": 0.0, "n_posts": 0},
@@ -36,11 +34,12 @@ personality_aggregation_original = {
 }
 
 url_to_personality_aggregation = {}
+url_to_latest_predictions = {}  # New global to store the most recent predictions for each URL
 
-def set_personality_aggregation_map(url,aggregation=None):
+def set_personality_aggregation_map(url, aggregation=None):
     global url_to_personality_aggregation
     if not aggregation:
-        aggregation= copy.deepcopy(personality_aggregation_original)
+        aggregation = copy.deepcopy(personality_aggregation_original)
     url_to_personality_aggregation[url] = aggregation
 
 def get_personality_aggregation(url):
@@ -50,10 +49,13 @@ def get_personality_aggregation(url):
     return url_to_personality_aggregation[url]
 
 def clear_personality_aggregation(url):
-    global url_to_personality_aggregation
+    global url_to_personality_aggregation, url_to_latest_predictions
     if url in url_to_personality_aggregation:
         del url_to_personality_aggregation[url]
         print(f"✅ Cleared personality aggregation for {url}")
+    if url in url_to_latest_predictions:  # Also clear the latest predictions
+        del url_to_latest_predictions[url]
+        print(f"✅ Cleared latest predictions for {url}")
 
 def download_if_not_exists(resource, identifier):
     try:
@@ -76,8 +78,8 @@ def preprocess_posts(text):
     long repeated characters, and stopwords; then lemmatize the words.
     """
     text = re.sub('http[s]?://\S+', '', text)            # Remove URLs
-    text = re.sub("[^a-zA-Z]", " ", text).lower()          # Keep only alphabets and lowercase
-    text = re.sub(r'([a-z])\1{2,}', '', text)              # Remove long repeated characters
+    text = re.sub("[^a-zA-Z]", " ", text).lower()        # Keep only alphabets and lowercase
+    text = re.sub(r'([a-z])\1{2,}', '', text)            # Remove long repeated characters
     tokens = [lemmatiser.lemmatize(word) for word in text.split() if word not in useless_words]
     return " ".join(tokens)
 
@@ -150,11 +152,11 @@ def load_models():
     """
     Load trained models and vectorizer from disk.
     """
-    current_dir =os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    current_dir = os.path.dirname(os.path.dirname(os.path.abspath(_file_)))
     print("Cur ", current_dir)
-    with open(os.path.join(current_dir,models_path), 'rb') as f:
+    with open(os.path.join(current_dir, models_path), 'rb') as f:
         models = pickle.load(f)
-    with open(os.path.join(current_dir,vectorizer_path), 'rb') as f:
+    with open(os.path.join(current_dir, vectorizer_path), 'rb') as f:
         vectorizer = pickle.load(f)
     print(f"✅ Loaded models from {models_path}")
     print(f"✅ Loaded vectorizer from {vectorizer_path}")
@@ -164,7 +166,6 @@ def load_models():
 # Global aggregation for personality predictions from multiple posts.
 # We now store both the cumulative confidence and count for each trait.
 # Added P_sum and n_posts for tracking probability sums across posts
-
 
 def update_personality_aggregation(post_text, base_url, models, vectorizer):
     """
@@ -176,8 +177,9 @@ def update_personality_aggregation(post_text, base_url, models, vectorizer):
         models (dict): Models for each dichotomy.
         vectorizer: A fitted TF-IDF vectorizer.
     """
+    global url_to_latest_predictions
     predictions = predict_personality(post_text, models, vectorizer)
-    personality_aggregation= get_personality_aggregation(base_url)
+    personality_aggregation = get_personality_aggregation(base_url)
     for dichotomy in personality_type:
         pred_info = predictions[dichotomy]
         binary_pred = pred_info['prediction']  # 0 or 1
@@ -193,12 +195,12 @@ def update_personality_aggregation(post_text, base_url, models, vectorizer):
         personality_aggregation[dichotomy]["P_sum"] += prob
         personality_aggregation[dichotomy]["n_posts"] += 1
         
-    set_personality_aggregation_map(base_url,personality_aggregation)
+    set_personality_aggregation_map(base_url, personality_aggregation)
+    url_to_latest_predictions[base_url] = predictions  # Store the latest predictions
     return predictions['MBTI']
 
 def get_aggregated_personality(url):
     return calculate_personality(get_personality_aggregation(url))['personality']
-
 
 def calculate_personality(data):
     """
@@ -262,7 +264,6 @@ def reset_personality_aggregation(url):
     """
     clear_personality_aggregation(url)
 
-
 def get_aggregated_details(url):
     """
     Returns the current global aggregation details for all personality traits.
@@ -274,74 +275,133 @@ def get_aggregated_details(url):
 # -----------------------------------------------------------------------------
 # New functions for cognitive score calculation
 
+# Helper function to convert MBTI to Big Five
 def mbti_to_bigfive(mbti_scores):
     """
-    Convert MBTI probabilities to Big Five scores using hypothetical regression weights.
-    
+    Convert MBTI probabilities to Big Five scores using softened regression weights.
+
     Args:
         mbti_scores (list): [P(E), P(S), P(T), P(P)]
-        
+
     Returns:
         list: [Openness, Conscientiousness, Extraversion, Agreeableness, Neuroticism]
     """
-    # Openness: High N (low S) increases Openness
-    O = 0.5 - 0.3 * mbti_scores[1] + 0.1 * mbti_scores[0] + 0.05 * mbti_scores[2] - 0.1 * mbti_scores[3]
-    # Conscientiousness: High J (low P) increases Conscientiousness
-    C = 0.5 - 0.4 * mbti_scores[3] + 0.05 * mbti_scores[0] + 0.1 * mbti_scores[1] + 0.05 * mbti_scores[2]
-    # Extraversion: High E increases Extraversion
-    E = 0.2 + 0.8 * mbti_scores[0] + 0.05 * mbti_scores[1] - 0.1 * mbti_scores[2] + 0.1 * mbti_scores[3]
-    # Agreeableness: High F (low T) increases Agreeableness
-    A = 0.5 - 0.3 * mbti_scores[2] + 0.1 * mbti_scores[0] + 0.05 * mbti_scores[1] + 0.05 * mbti_scores[3]
-    # Neuroticism: Assumed influences (e.g., higher T may increase)
-    N = 0.3 - 0.2 * mbti_scores[0] + 0.1 * mbti_scores[1] + 0.15 * mbti_scores[2] + 0.1 * mbti_scores[3]
-    
+    O = 0.5 - 0.15 * mbti_scores[1] + 0.05 * mbti_scores[0] + 0.025 * mbti_scores[2] - 0.05 * mbti_scores[3]
+    C = 0.5 - 0.2 * mbti_scores[3] + 0.025 * mbti_scores[0] + 0.05 * mbti_scores[1] + 0.025 * mbti_scores[2]
+    E = 0.2 + 0.4 * mbti_scores[0] + 0.025 * mbti_scores[1] - 0.05 * mbti_scores[2] + 0.05 * mbti_scores[3]
+    A = 0.5 - 0.15 * mbti_scores[2] + 0.05 * mbti_scores[0] + 0.025 * mbti_scores[1] + 0.025 * mbti_scores[3]
+    N = 0.3 - 0.1 * mbti_scores[0] + 0.05 * mbti_scores[1] + 0.075 * mbti_scores[2] + 0.05 * mbti_scores[3]
     return [O, C, E, A, N]
 
 def bigfive_to_cognitive(bigfive_scores):
     """
-    Convert Big Five scores to a cognitive score using hypothetical regression weights.
-    
+    Convert Big Five scores to a cognitive score using softened regression weights.
+
     Args:
         bigfive_scores (list): [Openness, Conscientiousness, Extraversion, Agreeableness, Neuroticism]
+
+    Returns:
+        float: Cognitive score (e.g., scaled like IQ, mean 100, SD wider)
+    """
+    intercept = 100
+    weights = [2.5, 1, 0.5, 0, -1.5]  # Reduced weight effect
+    cognitive_score = intercept + sum(w * s for w, s in zip(weights, bigfive_scores))
+    return cognitive_score
+
+def compute_individual_cognitive_score(predictions):
+    """
+    Compute cognitive score from the predictions of a single individual.
+    
+    Args:
+        predictions (dict): The output from predict_personality, containing probabilities for each dichotomy.
         
     Returns:
-        float: Cognitive score (e.g., scaled like IQ, mean 100, SD 15)
+        float: Cognitive score
     """
-    # Hypothetical coefficients based on correlations
-    intercept = 100  # Base IQ-like score
-    weights = [5, 2, 1, 0, -3]  # O positive, N negative, others minor
-    
-    cognitive_score = intercept + sum(w * s for w, s in zip(weights, bigfive_scores))
+    mbti_probs = [predictions[dichotomy]['probability'] for dichotomy in personality_type]
+    bigfive_scores = mbti_to_bigfive(mbti_probs)
+    cognitive_score = bigfive_to_cognitive(bigfive_scores)
     return cognitive_score
 
 def get_cognitive_score(url):
     """
-    Compute cognitive score from the current personality aggregation.
+    Compute cognitive score from the most recent post's predictions for the given URL.
+    
+    Args:
+        url (str): The URL identifying the user/profile.
     
     Returns:
-        float: Cognitive score based on aggregated MBTI probabilities
+        float: Cognitive score based on the most recent post's MBTI probabilities.
     """
-    personality_aggregation = get_personality_aggregation(url)  
+    global url_to_latest_predictions
     
-    # Extract average probabilities for each dichotomy
-    mbti_scores = []
-    for dichotomy in personality_type:
-        P_sum = personality_aggregation[dichotomy]["P_sum"]
-        n_posts = personality_aggregation[dichotomy]["n_posts"]
-        avg_P = P_sum / n_posts if n_posts > 0 else 0.5  # Default to 0.5 if no posts
-        mbti_scores.append(avg_P)
+    # Check if there are predictions for this URL
+    if url not in url_to_latest_predictions:
+        # If no predictions exist (e.g., no posts processed yet), return a default score
+        return 100.00  # Neutral default score
     
-    # Convert MBTI scores to Big Five
-    bigfive_scores = mbti_to_bigfive(mbti_scores)
-    
-    # Convert Big Five to cognitive score
+    # Use the most recent predictions to compute the cognitive score
+    predictions = url_to_latest_predictions[url]
+    mbti_probs = [predictions[dichotomy]['probability'] for dichotomy in personality_type]
+    bigfive_scores = mbti_to_bigfive(mbti_probs)
     cognitive_score = bigfive_to_cognitive(bigfive_scores)
     
     return cognitive_score
 
 # -----------------------------------------------------------------------------
 # For testing purposes: load models and perform a test aggregation.
-if __name__ == "__main__":
+# For testing purposes: load models and perform a test aggregation.
+if _name_ == "_main_":
+    try:
+        models, vectorizer = load_models()
+        # A diverse list of posts representing different personality aspects:
+        posts = [
+            "I love spending time alone reading and reflecting on my thoughts.",                # Likely Introverted (I)
+            "I enjoy lively parties and meeting lots of new people; social energy fuels me.",      # Likely Extroverted (E)
+            "I rely on my intuition and abstract ideas to understand complex concepts.",         # Likely Intuitive (N)
+            "I prefer dealing with concrete facts and observable details in my everyday work.",    # Likely Sensing (S)
+            "I deeply care about others and let my emotions guide my decisions.",                 # Likely Feeling (F)
+            "I make decisions based solely on logic and objective analysis.",                     # Likely Thinking (T)
+            "I like to plan every detail in advance and keep my schedule structured.",             # Likely Judging (J)
+            "I enjoy a flexible lifestyle, embracing spontaneity and unexpected adventures."       # Likely Perceiving (P)
+        ]
+        
+        # Process each post one by one and show iteration details.
+        for idx, post in enumerate(posts, start=1):
+            print(f"\n----- Iteration {idx}: Processing Post -----")
+            print("Post Text:")
+            print(post)
+            
+            # Get the per-post personality prediction
+            prediction = predict_personality(post, models, vectorizer)
+            print("Predicted MBTI for this post:", prediction['MBTI'])
+            
+            # Update the aggregation with the current post.
+            update_personality_aggregation(post, "NONE", models, vectorizer)
+            
+            # Retrieve the current overall personality and detailed aggregates.
+            overall = get_aggregated_personality("NONE")  # Pass the URL "NONE"
+            details = get_aggregated_details("NONE")      # Pass the URL "NONE"
+            
+            print("Current Overall MBTI Prediction:", overall)
+            print("Current Aggregation Details:")
+            for dichotomy, data in details.items():
+                print(f" {dichotomy}:")
+                for letter, stats in data.items():
+                    if isinstance(stats, dict):  # Only print I/E, N/S, etc. stats
+                        avg = stats['conf_sum'] / stats['count'] if stats['count'] > 0 else 0.0
+                        print(f"   {letter}: count = {stats['count']}, average confidence = {avg:.2f}")
+            
+            # Get and display the current cognitive score
+            cognitive_score = get_cognitive_score("NONE")  # Pass the URL "NONE"
+            print(f"Current Cognitive Score: {cognitive_score:.2f}")
+            print("-" * 50)
+        
+        # Final overall personality after processing all posts.
+        print("\nFinal Overall MBTI:", overall)
+        print(f"Final Cognitive Score: {get_cognitive_score('NONE'):.2f}")  # Pass the URL "NONE"
+    except Exception as e:
+        print("Error during testing:", e)
     try:
         models, vectorizer = load_models()
         # A diverse list of posts representing different personality aspects:
