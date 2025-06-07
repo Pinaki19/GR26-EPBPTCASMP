@@ -11,11 +11,9 @@ def categorize_fixed_cognitive_score(score):
     Returns:
         str: "high_cognitive", "moderate_cognitive", or "routine"
     """
-    fixed_mean = 102.27
-    fixed_std = 0.19
-
+    fixed_mean = 101.26
+    fixed_std = 0.23
     z = (score - fixed_mean) / fixed_std
-
     if z > 1.0:
         return "high_cognitive"
     elif z < -1.0:

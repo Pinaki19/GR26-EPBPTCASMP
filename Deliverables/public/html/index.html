@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Employability Prediction Tool</title>
+
+  <!-- Google Fonts -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Lato&family=Montserrat:wght@700&display=swap"
+    rel="stylesheet"
+  />
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body {
+      font-family: 'Lato', sans-serif;
+      background: linear-gradient(270deg, #f0f4ff, #f3f3ff, #eefdfd, #f0f4ff);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+      color: #1f2937;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+    h1, h2 {
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    @keyframes gradientBG {
+      0% {
+        background-position: 0% 50%;
+      }
+      50% {
+        background-position: 100% 50%;
+      }
+      100% {
+        background-position: 0% 50%;
+      }
+    }
+
+    .gradient-shadow {
+      position: relative;
+      border-radius: 1rem;
+      padding: 2px;
+      background: linear-gradient(270deg, #7c3aed, #38bdf8, #7c3aed, #38bdf8);
+      background-size: 400% 400%;
+      animation: gradientBG 12s ease infinite;
+      transition: box-shadow 0.5s ease;
+      cursor: pointer;
+    }
+
+    .gradient-shadow > .card-inner {
+      background: white;
+      border-radius: 1rem;
+      height: 100%;
+      width: 100%;
+      box-shadow: 0 10px 20px rgba(124, 58, 237, 0.3);
+      transition: box-shadow 0.5s ease, transform 0.5s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 2rem;
+      text-align: center;
+      user-select: none;
+    }
+
+    .gradient-shadow:hover > .card-inner {
+      box-shadow: 0 15px 30px rgba(124, 58, 237, 0.5);
+      transform: scale(1.05);
+      transition: box-shadow 0.5s ease, transform 0.5s ease;
+    }
+
+    #modal-card {
+      border-radius: 1rem;
+      box-shadow: 0 30px 60px -10px rgba(124, 58, 237, 0.5);
+      transition: box-shadow 0.5s ease, transform 0.6s ease;
+      max-width: 420px;
+      margin: 0 auto;
+      background: white;
+      padding: 2rem;
+      position: relative;
+      cursor: default;
+    }
+
+    #modal-card:hover {
+      box-shadow: 0 40px 80px -5px rgba(124, 58, 237, 0.7);
+      transform: scale(1.05);
+    }
+
+    .bg-gradient-btn {
+      background: linear-gradient(270deg, #7c3aed, #38bdf8, #7c3aed, #38bdf8);
+      background-size: 400% 400%;
+      animation: gradientBG 10s ease infinite;
+    }
+
+    button {
+      transition: box-shadow 0.5s ease, transform 0.5s ease;
+      cursor: pointer;
+    }
+    button:hover {
+      filter: brightness(1.1);
+      box-shadow: 0 4px 15px rgba(56, 189, 248, 0.7);
+      transform: scale(1.05);
+    }
+
+    #backdrop {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(6px);
+      z-index: 50;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    #backdrop.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #modal-container {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 60;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    #modal-container.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    input[type="url"] {
+      border: 2px solid #7c3aed;
+      border-radius: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      width: 100%;
+      font-size: 1rem;
+      outline-offset: 2px;
+      outline-color: #38bdf8;
+      margin-bottom: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+
+  <main class="min-h-screen flex flex-col items-center justify-center px-6 py-12 max-w-6xl mx-auto gap-16">
+
+    <header class="text-center max-w-3xl">
+      <h1
+        class="text-5xl md:text-6xl font-heading font-extrabold mb-4 bg-gradient-to-r from-purple-600 via-sky-500 to-purple-600 bg-clip-text text-transparent animate-gradientBG"
+        style="background-size: 400% 400%; animation: gradientBG 15s ease infinite;"
+      >
+        Employability Prediction Tool
+      </h1>
+      <p class="text-lg md:text-xl text-gray-600 font-sans font-medium">
+        Analyze personality &amp; cognitive traits from social media for employability prediction.
+      </p>
+    </header>
+
+    <section
+      class="flex flex-col md:flex-row gap-8 w-full justify-center max-w-5xl"
+      aria-label="Assessment options"
+    >
+      <!-- Self-Assessment Card -->
+      <div
+        class="gradient-shadow w-full md:w-1/3"
+        role="button"
+        tabindex="0"
+        aria-label="Open Self-Assessment Analysis"
+        onclick="openCard('self')"
+        onkeypress="if(event.key==='Enter'){openCard('self')}"
+      >
+        <div class="card-inner">
+          <img
+            src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"
+            alt="Single User Icon"
+            class="mx-auto h-12 w-12"
+            loading="lazy"
+          />
+          <h2 class="font-heading text-2xl mt-6 mb-3">Self-Assessment Analysis</h2>
+          <p class="text-gray-600 flex-grow">
+            Analyze your own social media or text content.
+          </p>
+          <button
+            type="button"
+            aria-label="Start Self-Analysis"
+            class="mt-6 inline-flex items-center justify-center gap-2 px-6 py-2 rounded-full text-white font-semibold text-base bg-gradient-btn bg-4x animate-gradientBG"
+          >
+            <span>Start Self-Analysis</span>
+            <i data-lucide="arrow-right" class="h-5 w-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Candidate Assessment Card -->
+      <div
+        class="gradient-shadow w-full md:w-1/3"
+        role="button"
+        tabindex="0"
+        aria-label="Open Candidate Assessment Analysis"
+        onclick="openCard('candidate')"
+        onkeypress="if(event.key==='Enter'){openCard('candidate')}"
+      >
+        <div class="card-inner">
+          <img
+            src="https://cdn-icons-png.flaticon.com/512/747/747376.png"
+            alt="Multiple Users Icon"
+            class="mx-auto h-12 w-12"
+            loading="lazy"
+          />
+          <h2 class="font-heading text-2xl mt-6 mb-3">Candidate Assessment</h2>
+          <p class="text-gray-600 flex-grow">
+            Analyze social media of candidates to assess traits.
+          </p>
+          <button
+            type="button"
+            aria-label="Start Candidate Analysis"
+            class="mt-6 inline-flex items-center justify-center gap-2 px-6 py-2 rounded-full text-white font-semibold text-base bg-gradient-btn bg-4x animate-gradientBG"
+          >
+            <span>Start Candidate Analysis</span>
+            <i data-lucide="arrow-right" class="h-5 w-5"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Modal Backdrop -->
+    <div id="backdrop" aria-hidden="true"></div>
+
+    <!-- Modal Container -->
+    <div id="modal-container" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-desc">
+      <div id="modal-card">
+        <h2 id="modal-title" class="text-2xl font-bold mb-4"></h2>
+        <p id="modal-desc" class="mb-4 text-gray-700"></p>
+
+        <form id="url-form" class="mb-4">
+          <div id="url-inputs-container">
+            <!-- URL inputs dynamically inserted here -->
+          </div>
+          <button
+            type="button"
+            id="add-url-btn"
+            class="text-sm text-purple-700 font-semibold hover:underline"
+            aria-label="Add more URLs"
+          >
+            + Add More URLs
+          </button>
+        </form>
+
+        <div class="flex justify-end gap-4">
+          <button
+            id="modal-submit"
+            type="submit"
+            form="url-form"
+            class="bg-purple-600 text-white px-6 py-2 rounded-full font-semibold hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+          >
+            Submit
+          </button>
+          <button
+            id="modal-cancel"
+            type="button"
+            class="bg-gray-300 px-6 py-2 rounded-full font-semibold hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Initialize Lucide icons
+    window.addEventListener('load', () => {
+      if (window.lucide) {
+        window.lucide.replace();
+      }
+    });
+
+    const backdrop = document.getElementById('backdrop');
+    const modalContainer = document.getElementById('modal-container');
+    const modalTitle = document.getElementById('modal-title');
+    const modalDesc = document.getElementById('modal-desc');
+    const urlInputsContainer = document.getElementById('url-inputs-container');
+    const addUrlBtn = document.getElementById('add-url-btn');
+    const modalCancelBtn = document.getElementById('modal-cancel');
+    const modalSubmitBtn = document.getElementById('modal-submit');
+    const urlForm = document.getElementById('url-form');
+
+    let currentMode = '';
+
+    function createUrlInput(index) {
+      const input = document.createElement('input');
+      input.type = 'url';
+      input.name = `url${index}`;
+      input.id = `url${index}`;
+      input.placeholder = 'Enter URL';
+      input.required = true;
+      return input;
+    }
+
+    function openCard(mode) {
+      currentMode = mode;
+      urlInputsContainer.innerHTML = '';
+
+      if (mode === 'self') {
+        modalTitle.textContent = 'Self-Assessment Analysis';
+        modalDesc.textContent = 'Provide your social media or text content URLs for self-analysis.';
+        addUrlInput(); // add only one input
+        addUrlBtn.style.display = 'none'; // hide the add more URLs button
+      } else if (mode === 'candidate') {
+        modalTitle.textContent = 'Candidate Assessment';
+        modalDesc.textContent = 'Provide URLs of candidates’ social media or text content to assess traits.';
+        addUrlInput(); // start with one input
+        addUrlBtn.style.display = 'inline'; // show the add more URLs button
+      }
+      showModal();
+    }
+
+    function showModal() {
+      backdrop.classList.add('visible');
+      modalContainer.classList.add('visible');
+      urlInputsContainer.querySelector('input').focus();
+    }
+
+    function hideModal() {
+      backdrop.classList.remove('visible');
+      modalContainer.classList.remove('visible');
+      urlInputsContainer.innerHTML = '';
+    }
+
+    function addUrlInput() {
+      const count = urlInputsContainer.children.length;
+      const input = createUrlInput(count + 1);
+      urlInputsContainer.appendChild(input);
+    }
+
+    addUrlBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      addUrlInput();
+    });
+
+    modalCancelBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      hideModal();
+    });
+
+    backdrop.addEventListener('click', hideModal);
+
+    urlForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const urls = [];
+      for (const input of urlInputsContainer.querySelectorAll('input[type="url"]')) {
+        if (input.value.trim() !== '') {
+          urls.push(input.value.trim());
+        }
+      }
+      if (urls.length === 0) {
+        alert('Please enter at least one URL.');
+        return;
+      }
+
+      if(urls.length>4){
+        alert('Please enter a maximum of 4 URLs.');
+        return;
+      }
+
+      // For demonstration, just log the URLs and mode
+      console.log('Mode:', currentMode);
+      console.log('URLs:', urls);
+      if( currentMode === 'self') {
+        console.log('Self-Analysis Mode');
+        url=urls[0]; // Only one URL for self-analysis
+        setTimeout(() => {
+          window.location.href = `/analyze_individual?url=${url}`;
+        }, 800)
+      } else if (currentMode === 'candidate') {
+        console.log('Candidate Assessment Mode');
+      }
+      // TODO: Implement your actual analysis logic here
+
+      hideModal();
+    });
+
+    // Accessibility: close modal on Escape key
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modalContainer.classList.contains('visible')) {
+        hideModal();
+      }
+    });
+  </script>
+</body>
+</html>

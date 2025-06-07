@@ -14,6 +14,7 @@ import threading
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -35,6 +36,7 @@ from image_analysis import download_and_process_image
 from __init__ import set_dir
 
 
+
 set_dir()
 
 executor = ThreadPoolExecutor(max_workers=20)
@@ -52,9 +54,8 @@ class Name(BaseModel):  #User's name
     name: str
     dp:str
     
-class Profile(BaseModel):   #web service sends a new profile link
-    url:str
-
+class Profiles(BaseModel):   #web service sends list of profiles
+    url:List[str]
 
 
 @asynccontextmanager
@@ -103,6 +104,8 @@ def update_user_data(url: str, cognitive_score: str):
     Update user data for a specific URL with cognitive score.
     This function is called when the cognitive score is updated.
     """
+    if subscription_exixts(url):
+        return
     global url_to_data_map
     if url in url_to_data_map:
         url_to_data_map[url]["cognitive_score"] = cognitive_score
@@ -143,6 +146,7 @@ async def subscribe_to_url(url: str, session_id: str):
     else:
         if session_id not in url_to_uid_map[url]:
             url_to_uid_map[url].append(session_id)
+    print(f"Subscribed session ID {session_id} to URL {url}")
     if data_exists(url):
         user_data = get_user_data(url)
         if session_id in uid_to_socket_map:
@@ -170,6 +174,8 @@ def unsubscribe_from_url(session_id: str,url=None) -> bool:    # returns wheathe
     This function is called when the analysis is stopped.
     """
     if not url:
+        print('Trying to unsubscribe from all URLs for session ID:', session_id)
+        print(url_to_uid_map)
         # If no URL is provided, unsubscribe from all URLs for this session ID
         for url in list(url_to_uid_map.keys()):
             if session_id in url_to_uid_map[url]:
@@ -178,6 +184,8 @@ def unsubscribe_from_url(session_id: str,url=None) -> bool:    # returns wheathe
                     del url_to_uid_map[url]
                     clear_result(url)
                     reset_user_data(url)  # Reset user data for this URL
+                    reset_personality_aggregation(url)
+                    send_data(msg_type='STOP SCROLL',msg_data=url)
             return False
     else:
         if url in url_to_uid_map and session_id in url_to_uid_map[url]:
@@ -217,6 +225,8 @@ def set_result(url, result):
     """
     Set the result for a specific URL.
     """
+    if not subscription_exixts(url):
+        return
     global url_to_result_map
     if url not in url_to_result_map:
         url_to_result_map[url] = {}
@@ -229,6 +239,7 @@ def clear_result(url):
     global url_to_result_map
     if url in url_to_result_map:
         del url_to_result_map[url]
+        
         
 
 @app.websocket("/ws")
@@ -265,13 +276,12 @@ async def websocket_endpoint(websocket: WebSocket):
             if ws == websocket:
                 unsubscribe_from_url(uid)  # Unsubscribe from all URLs for this session ID
                 del uid_to_socket_map[uid]
-                break
-            
         print("WebSocket Disconnected")
+        
         
 @app.get("/")
 async def serve_main(session_id: str = Cookie(default=None)):
-    main_file_path = os.path.join(os.path.dirname(__file__), 'public', 'html', 'main.html')
+    main_file_path = os.path.join(os.path.dirname(__file__), 'public', 'html', 'index.html')
     response = FileResponse(main_file_path, media_type="text/html")
     
     if session_id is None:
@@ -280,8 +290,38 @@ async def serve_main(session_id: str = Cookie(default=None)):
         print(f"New session ID set: {new_session_id}")
     else:
         print(f"Existing session ID: {session_id}")
-    
+        unsubscribe_from_url(session_id)  # Unsubscribe from all URLs for this session ID
     return response
+
+@app.post('/analyze_profiles')
+async def analyze_profiles(profiles: Profiles,session_id: str = Cookie(default=None)):
+    """
+    Analyzes a list of profiles and returns the results.
+    This endpoint is called when the user submits a list of profile URLs.
+    """
+    urls = profiles.url
+    if not urls:
+        return {"error": "No URLs provided for analysis."}
+    
+    if len(urls)>4:
+        return {"error": "Too many URLs provided. Please limit to 4 URLs."}
+    if len(urls)==1:
+        url = urls[0]
+        return RedirectResponse(url=f"/analyze_individual?url={url}")
+    else:
+        return RedirectResponse(url="/analyze_candidates")
+    
+@app.get("/analyze_individual")
+async def analyze_individual(url: str = Query(..., title="Profile URL"),session_id: str = Cookie(default=None)):
+    """
+    Analyzes a single profile URL and returns the results.
+    This endpoint is called when the user clicks on a single profile URL.
+    """
+    file_path = os.path.join(os.path.dirname(__file__), 'public', 'html', 'main.html')
+    # Append the url as a query parameter to the response
+    response = FileResponse(file_path, media_type="text/html")
+    return response
+    
 
 @app.post("/send_name")
 async def get_user_name(body: Name):
@@ -312,6 +352,9 @@ def analyze_and_process(body: dict):
     url = body.get("url", "NONE")
     post_text = body["text"]
     img_links = body.get("imgs", [])
+    if not subscription_exixts(url):
+        print(f"URL {url} is not subscribed to. Skipping analysis.")
+        return "Not Subscribed"
     session_ids = get_subscriptions(url)
     Result=get_result(url)
     
@@ -346,14 +389,14 @@ def analyze_and_process(body: dict):
     print("Overall Personality Result:", overall_result)
     aggregates = get_aggregated_details(url)
     print("Current MBTI Prediction:", current_personality)
-    print("Current Aggregation Details:")
-    for dichotomy, data in aggregates.items():
-        print(f" {dichotomy}:")
-        for letter, stats in data.items():
-            if isinstance(stats, dict):
-                avg = stats['conf_sum'] / stats['count'] if stats['count'] > 0 else 0.0
-                print(f"   {letter}: count = {stats['count']}, average confidence = {avg:.2f}")
-        print("-" * 50)
+    # print("Current Aggregation Details:")
+    # for dichotomy, data in aggregates.items():
+    #     print(f" {dichotomy}:")
+    #     for letter, stats in data.items():
+    #         if isinstance(stats, dict):
+    #             avg = stats['conf_sum'] / stats['count'] if stats['count'] > 0 else 0.0
+    #             print(f"   {letter}: count = {stats['count']}, average confidence = {avg:.2f}")
+    #     print("-" * 50)
 
     if current_personality in Result:
         Result[current_personality] += 1

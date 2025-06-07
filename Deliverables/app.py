@@ -155,15 +155,11 @@ def login(driver):
     # Click on email field first before typing
     ActionChains(driver).move_to_element(email_input).click().perform()
     human_like_typing(email_input, email)
-    
     time.sleep(random.uniform(0.7, 1.5))  # Short pause between field entries
-    
     # Click on password field before typing
     ActionChains(driver).move_to_element(pass_input).click().perform()
     human_like_typing(pass_input, password)
-    
     time.sleep(random.uniform(0.5, 2))  # Short pause before submission
-    
     # Click login button instead of pressing Enter
     ActionChains(driver).move_to_element(login_button).click().perform()
 
@@ -243,8 +239,6 @@ set_dir()
 
 url_to_thread_map={}
 
-#--------------------------For verification dont touch -------------------------------------
-#-------------------------------------------------------------------------------------------
 def start_server(host='127.0.0.1', port=65431):
     """
     Starts a server that listens for incoming connections and receives data.

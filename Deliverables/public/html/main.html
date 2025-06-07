@@ -131,9 +131,11 @@
         <form id="profileForm">
             <div class="mb-3">
                 <input type="url" id="profileLink" class="form-control" placeholder="Enter Facebook Profile Link" required>
+                
             </div>
             <button type="submit" id="analyzeBtn" class="btn btn-primary">Analyze</button>
             <button type="button" id="stopBtn" class="btn btn-danger d-none">Stop Analysis</button>
+            <button type="button" id="backBtn" class="btn btn-secondary" onclick="stopFetchingUpdates();window.location.href='/'">Back</button>
         </form>
 
         <div class="mt-4 row text-center" id="Main">
@@ -336,6 +338,7 @@
     
             document.getElementById("analyzeBtn").classList.remove("d-none");
             document.getElementById("stopBtn").classList.add("d-none");
+            hideLoadingAnimation();
         }
     
         document.getElementById("stopBtn").addEventListener("click", stopFetchingUpdates);
@@ -609,6 +612,18 @@
             const sessionId = sessionCookie.split('=')[1];
             console.log("Session ID found in cookie:", sessionId);
             connectWebSocket(); // Connect WebSocket only if the session_id cookie is found
+
+            // Auto-fill and submit if 'url' query param is present
+            const params = new URLSearchParams(window.location.search);
+            const urlParam = params.get('url');
+            if (urlParam) {
+                const input = document.getElementById('profileLink');
+                input.value = urlParam;
+                // Wait a tick to ensure event listeners are attached and WebSocket is connected
+                setTimeout(() => {
+                    document.getElementById('profileForm').dispatchEvent(new Event('submit', {cancelable: true, bubbles: true}));
+                }, 400);
+            }
         } else {
             console.warn("Session ID cookie not found. WebSocket will not connect.");
             // You might want to implement a retry mechanism or user notification here
