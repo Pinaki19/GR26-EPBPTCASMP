@@ -1,0 +1,16 @@
+fastapi==0.115.12
+matplotlib==3.6.0
+nltk==3.9.1
+numpy==1.23.4
+opencv_python==4.6.0.66
+pandas==1.5.1
+pydantic==2.11.5
+pytesseract==0.3.13
+Requests==2.32.3
+scikit_learn==1.7.0
+selenium==4.33.0
+starlette==0.47.0
+torch==2.2.1
+uvicorn==0.34.3
+webdriver_manager==4.0.2
+xgboost==3.0.2
