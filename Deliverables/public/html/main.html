@@ -135,7 +135,15 @@
             </div>
             <button type="submit" id="analyzeBtn" class="btn btn-primary">Analyze</button>
             <button type="button" id="stopBtn" class="btn btn-danger d-none">Stop Analysis</button>
-            <button type="button" id="backBtn" class="btn btn-secondary" onclick="stopFetchingUpdates();window.location.href='/'">Back</button>
+            <button type="button" id="backBtn" class="btn btn-secondary" onclick="
+                stopFetchingUpdates();
+                const params = new URLSearchParams(window.location.search);
+                if (params.has('back_url')) {
+                    window.close();
+                } else {
+                    window.location.href = '/';
+                }
+            ">Back</button>
         </form>
 
         <div class="mt-4 row text-center" id="Main">
@@ -229,13 +237,24 @@
         
             socket.onmessage = function (event) {
                 let data = JSON.parse(event.data);
+
+                if (data.type === "Bad_link") {
+                    stopFetchingUpdates();
+                    resetResults();
+                    hideLoadingAnimation();
+                    alert("Invalid or unsupported Facebook profile link. Please enter a valid link.");
+                    return;
+                }
     
                 if (data.type === "user_name") {
+                    if(data.url!=curProfileLink)
+                        return;
                     updateUserName(data.name);
                     console.log("DP:"+data.dp);
                     loadUserProfilePicture(data.dp);
                     stopped=false;
                 } 
+                
                 else if (data.type === "update") {
                     if(stopped|| curProfileLink!=data.url)
                         return;
@@ -255,7 +274,20 @@
                 console.error("WebSocket Error:", error);
             };
         }
-
+        function normalizeFacebookLink(link) {
+            // Remove query params and fragments
+            link = link.split('?')[0].split('#')[0];
+            // Remove trailing slashes
+            link = link.replace(/\/+$/, "");
+            // Convert mobile links to www
+            link = link.replace(/^https?:\/\/m\.facebook\.com\//, "https://www.facebook.com/");
+            // Ensure starts with https://www.facebook.com/
+            link = link.replace(/^http:\/\/www\.facebook\.com\//, "https://www.facebook.com/");
+            if (!/^https:\/\/www\.facebook\.com\//.test(link)) {
+                link = link.replace(/^https?:\/\/facebook\.com\//, "https://www.facebook.com/");
+            }
+            return link;
+        }
         function loadUserProfilePicture(dpUrl) {
             let dpContainer = document.getElementById("dpContainer");
         
@@ -273,7 +305,11 @@
     
         document.getElementById("profileForm").addEventListener("submit", function(event) {
             event.preventDefault();
-            const profileLink = document.getElementById("profileLink").value;
+            let profileLink = document.getElementById("profileLink").value.trim();
+            // Normalize Facebook link
+            
+            profileLink = normalizeFacebookLink(profileLink);
+            document.getElementById("profileLink").value = profileLink;
             // Reset previous results
             
             showLoadingAnimation();
@@ -409,7 +445,7 @@
                     if (jobRequestStack.length > 0) {
                         // Take the latest request
                         const { mbti_type, cog_score, updateUI } = jobRequestStack.pop();
-
+                        
                         // Clear older requests
                         jobRequestStack = [];
 

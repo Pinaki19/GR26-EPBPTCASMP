@@ -20,8 +20,8 @@ from webdriver_manager.microsoft import EdgeChromiumDriverManager
 
 # File to store the path of the driver (so it only installs once)
 driver_path_file = 'driver_path.pkl'
-EMAIL="8334999569"
-PASSWORD="myfbaccount2024"
+EMAIL="atryeedhar23@gmail.com"
+PASSWORD="hello25"
 
 STOP=False
 driver=None
@@ -215,9 +215,9 @@ def scroll_profile(profile_link):
     except Exception as e:
         print(f"Error while scrolling profile {profile_link}: {e}")
     finally:
+        print("Exiting driver..")
         driver.quit()
         temp_profile.cleanup()  # Deletes the temporary profile directory
-
 
 
 class StoppableThread(threading.Thread):
@@ -277,7 +277,10 @@ def start_server(host='127.0.0.1', port=65431):
                 elif message['type']=="STOP SCROLL":
                     STOP=True
                     print("STOP resquested...")
-                    url_to_thread_map.get(message['data']).stop()
+                    thread=url_to_thread_map.get(message['data'])
+                    if thread and thread.is_alive():
+                        print("Stopping scroll thread for:", message['data'])
+                        thread.stop()
                 else:
                     pass
                 

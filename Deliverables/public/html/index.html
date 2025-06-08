@@ -292,14 +292,7 @@
     document.addEventListener('DOMContentLoaded', function() {
       // Initialize Lucide icons
       lucide.createIcons();
-      if (window.lucide) {
-        window.lucide.replace();
-      }
       
-    addUrlBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      addUrlInput();
-    });
 
     modalCancelBtn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -366,9 +359,7 @@
           urlInputsContainer.appendChild(wrapper);
 
           // Refresh Lucide icons
-          if (window.lucide) {
-            window.lucide.replace();
-          }
+
         };
       }
       showModal();
@@ -408,6 +399,21 @@
       hideModal();
     });
 
+    function normalizeFacebookLink(link) {
+          // Remove query params and fragments
+          link = link.split('?')[0].split('#')[0];
+          // Remove trailing slashes
+          link = link.replace(/\/+$/, "");
+          // Convert mobile links to www
+          link = link.replace(/^https?:\/\/m\.facebook\.com\//, "https://www.facebook.com/");
+          // Ensure starts with https://www.facebook.com/
+          link = link.replace(/^http:\/\/www\.facebook\.com\//, "https://www.facebook.com/");
+          if (!/^https:\/\/www\.facebook\.com\//.test(link)) {
+              link = link.replace(/^https?:\/\/facebook\.com\//, "https://www.facebook.com/");
+          }
+          return link;
+      }
+
     backdrop.addEventListener('click', hideModal);
 
     urlForm.addEventListener('submit', (e) => {
@@ -415,7 +421,7 @@
       const urls = [];
       for (const input of urlInputsContainer.querySelectorAll('input[type="url"]')) {
         if (input.value.trim() !== '') {
-          urls.push(input.value.trim());
+          urls.push(normalizeFacebookLink(input.value.trim()));
         }
       }
       if (urls.length === 0) {
