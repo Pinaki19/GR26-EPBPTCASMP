@@ -61,7 +61,7 @@ project-root/
 
 Clone or download the entire project from Google Drive. You’ll get a folder structure with:
 - `Deliverables/` (all code and assets)
-- `misc/` (any supporting data or documentation)
+- `Misc/` (any supporting data or documentation)
 - `README.md` (you are reading it!)
 - `screenshots/` (for UI reference)
 
